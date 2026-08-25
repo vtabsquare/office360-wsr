@@ -5,8 +5,10 @@ import { defineConfig, Plugin } from 'vite';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import nodemailer from 'nodemailer';
+import dns from 'dns';
 
 dotenv.config();
+dns.setDefaultResultOrder('ipv4first');
 
 function apiServerPlugin(): Plugin {
   return {

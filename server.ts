@@ -5,9 +5,11 @@ import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
 import nodemailer from 'nodemailer';
 import cron from 'node-cron';
+import dns from 'dns';
 import { runAutomatedWsrDispatch, fetchLiveWsrData } from './src/services/backendWsrService';
 
 dotenv.config();
+dns.setDefaultResultOrder('ipv4first');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
