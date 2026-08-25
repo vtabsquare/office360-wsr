@@ -1,0 +1,6 @@
+{
+  "name": "OfficeHub360 AI WSR Bot & PPT Generator",
+  "description": "Automated AI-powered Weekly Status Report (WSR) analyzer for OfficeHub360 & Supabase. Generates custom team PPT presentations, analyzes productivity, and schedules weekly executive emails to managers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
