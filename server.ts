@@ -351,7 +351,10 @@ app.post('/api/bot/dispatch-now', async (req, res) => {
     }
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
       auth: {
         user: smtpEmail,
         pass: smtpPassword,

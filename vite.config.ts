@@ -358,7 +358,10 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
 
           try {
             const transporter = nodemailer.createTransport({
-              service: 'gmail',
+              host: 'smtp.gmail.com',
+              port: 465,
+              secure: true,
+              family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
               auth: {
                 user: smtpEmail,
                 pass: smtpPassword,

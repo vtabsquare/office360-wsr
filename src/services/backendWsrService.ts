@@ -231,7 +231,10 @@ export async function runAutomatedWsrDispatch() {
     }
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
       auth: {
         user: smtpEmail,
         pass: smtpPassword,
@@ -304,7 +307,10 @@ export async function approveAndSendToManager(managerEmail: string) {
     if (!smtpPassword) throw new Error('SMTP_PASSWORD missing');
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
       auth: { user: smtpEmail, pass: smtpPassword },
     });
 
