@@ -406,6 +406,10 @@ app.post('/api/bot/dispatch-now', async (req, res) => {
       console.error('Brevo Dispatch error:', error);
       return res.status(500).json({ error: error.message || 'Dispatch failed' });
     }
+  } catch (error: any) {
+    console.error('General Dispatch error:', error);
+    return res.status(500).json({ error: error.message || 'Dispatch failed' });
+  }
 });
 
 // Helper for deterministic rule-based analysis when AI key is loading
