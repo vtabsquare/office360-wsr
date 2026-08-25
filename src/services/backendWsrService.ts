@@ -232,8 +232,8 @@ export async function runAutomatedWsrDispatch() {
 
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
       auth: {
         user: smtpEmail,
@@ -308,8 +308,8 @@ export async function approveAndSendToManager(managerEmail: string) {
 
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
       auth: { user: smtpEmail, pass: smtpPassword },
     });
