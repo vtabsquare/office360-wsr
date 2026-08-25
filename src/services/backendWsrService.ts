@@ -230,45 +230,56 @@ export async function runAutomatedWsrDispatch() {
       throw new Error('SMTP_PASSWORD is not configured.');
     }
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
-      auth: {
-        user: smtpEmail,
-        pass: smtpPassword,
-      },
-    });
+    try {
+      const brevoApiKey = process.env.BREVO_API_KEY;
 
-    const mailOptions: any = {
-      from: `"OfficeHub360 WSR Bot" <${smtpEmail}>`,
-      to: tlEmail, // Sent to TL first
-      subject: subject,
-      html: htmlBody,
-    };
+      const brevoPayload: any = {
+        sender: { email: smtpEmail, name: "OfficeHub360 WSR Bot" },
+        to: [{ email: tlEmail }],
+        subject: `ACTION REQUIRED: Approve Weekly Status Report (WSR) - ${dateRange}`,
+        htmlContent: htmlBody,
+      };
 
-    if (ccEmails.length > 0) {
-      mailOptions.cc = ccEmails.join(', ');
+      if (ccEmails && Array.isArray(ccEmails) && ccEmails.length > 0) {
+        const validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
+        if (validCc.length > 0) {
+          brevoPayload.cc = validCc.map(c => ({ email: c.trim() }));
+        }
+      }
+
+      const pptxBase64 = await getWsrPptxBase64(teams, 'Weekly Status Report (WSR)', dateRange);
+      if (pptxBase64) {
+        const base64Data = pptxBase64.replace(/^data:.*,/, '');
+        brevoPayload.attachment = [
+          {
+            content: base64Data,
+            name: `OfficeHub360_WSR_Deck_${dateRange.replace(/\s+/g, '_')}.pptx`
+          }
+        ];
+      }
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(brevoPayload)
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Brevo API Error (${response.status}): ${errBody}`);
+      }
+
+      const info = await response.json();
+      console.log(`[WSR Cron] Approval email dispatched to TL with ID: ${info.messageId}`);
+      return { success: true, messageId: info.messageId, status: 'pending_approval' };
+    } catch (error: any) {
+      console.error('Brevo Automated Dispatch Error:', error);
+      throw error;
     }
-
-    const pptxBase64 = await getWsrPptxBase64(teams, 'Weekly Status Report (WSR)', dateRange);
-    const pptxFileName = `OfficeHub360_WSR_Deck_${dateRange.replace(/\\s+/g, '_')}.pptx`;
-    const base64Data = pptxBase64.replace(/^data:.*,/, '');
-    
-    mailOptions.attachments = [
-      {
-        filename: pptxFileName,
-        content: base64Data,
-        encoding: 'base64',
-        contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      },
-    ];
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[WSR Cron] Approval email dispatched to TL with ID: ${info.messageId}`);
-    return { success: true, messageId: info.messageId, status: 'pending_approval' };
-
   } catch (error: any) {
     console.error('[WSR Cron] Dispatch failed:', error.message);
     throw error;
@@ -299,40 +310,50 @@ export async function approveAndSendToManager(managerEmail: string) {
 
     const finalHtml = generateWsrEmailHtml(teams, dateRange, managerEmail, false);
     const pptxBase64 = await getWsrPptxBase64(teams, 'Weekly Status Report (WSR)', dateRange);
-    const pptxFileName = `OfficeHub360_WSR_Deck_${dateRange.replace(/\\s+/g, '_')}.pptx`;
+    const pptxFileName = `OfficeHub360_WSR_Deck_${dateRange.replace(/\s+/g, '_')}.pptx`;
     
     const smtpEmail = process.env.SMTP_EMAIL || process.env.VITE_GMAIL_SENDER_EMAIL;
     if (!smtpEmail) throw new Error("SMTP_EMAIL is not configured");
-    const smtpPassword = process.env.SMTP_PASSWORD;
-    if (!smtpPassword) throw new Error('SMTP_PASSWORD missing');
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
-      auth: { user: smtpEmail, pass: smtpPassword },
-    });
+    const brevoApiKey = process.env.BREVO_API_KEY;
 
-    const mailOptions: any = {
-      from: `"OfficeHub360 WSR Bot" <${smtpEmail}>`,
-      to: managerEmail,
+    const brevoPayload: any = {
+      sender: { email: smtpEmail, name: "OfficeHub360 WSR Bot" },
+      to: [{ email: managerEmail }],
       subject: `Weekly Status Report (WSR) - ${dateRange} [Presentation Deck Attached]`,
-      html: finalHtml,
-      attachments: [{
-        filename: pptxFileName,
-        content: pptxBase64.replace(/^data:.*,/, ''),
-        encoding: 'base64',
-        contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      }]
+      htmlContent: finalHtml,
     };
 
     const ccEmails = (process.env.VITE_DEFAULT_CC_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
     if (ccEmails.length > 0) {
-      mailOptions.cc = ccEmails.join(', ');
+      brevoPayload.cc = ccEmails.map(c => ({ email: c }));
     }
 
-    const info = await transporter.sendMail(mailOptions);
+    if (pptxBase64 && pptxFileName) {
+      brevoPayload.attachment = [
+        {
+          content: pptxBase64.replace(/^data:.*,/, ''),
+          name: pptxFileName
+        }
+      ];
+    }
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': brevoApiKey,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(brevoPayload)
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Brevo API Error (${response.status}): ${errBody}`);
+    }
+
+    const info = await response.json();
     console.log(`[WSR Approval] Success! Final email sent to manager: ${info.messageId}`);
     return { success: true };
   } catch (err: any) {

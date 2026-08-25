@@ -359,55 +359,59 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
           }
 
           try {
-            const transporter = nodemailer.createTransport({
-              host: 'smtp.gmail.com',
-              port: 587,
-              secure: false, // false for 587 (uses STARTTLS)
-              family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
-              auth: {
-                user: smtpEmail,
-                pass: smtpPassword,
-              },
-            });
-
-            const mailOptions: any = {
-              from: `"OfficeHub360 WSR Bot" <${smtpEmail}>`,
-              to: toEmail,
+            const brevoApiKey = process.env.BREVO_API_KEY;
+            
+            const brevoPayload: any = {
+              sender: { email: smtpEmail, name: "OfficeHub360 WSR Bot" },
+              to: [{ email: toEmail }],
               subject: subject,
-              html: htmlBody,
+              htmlContent: htmlBody,
             };
 
             if (ccEmails && Array.isArray(ccEmails) && ccEmails.length > 0) {
               const validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
               if (validCc.length > 0) {
-                mailOptions.cc = validCc.join(', ');
+                brevoPayload.cc = validCc.map(c => ({ email: c.trim() }));
               }
             }
 
             if (pptxBase64 && pptxFileName) {
               const base64Data = pptxBase64.replace(/^data:.*,/, '');
-              mailOptions.attachments = [
+              brevoPayload.attachment = [
                 {
-                  filename: pptxFileName,
                   content: base64Data,
-                  encoding: 'base64',
-                  contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                },
+                  name: pptxFileName
+                }
               ];
             }
 
-            const info = await transporter.sendMail(mailOptions);
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+              method: 'POST',
+              headers: {
+                'accept': 'application/json',
+                'api-key': brevoApiKey,
+                'content-type': 'application/json'
+              },
+              body: JSON.stringify(brevoPayload)
+            });
+
+            if (!response.ok) {
+              const errBody = await response.text();
+              throw new Error(`Brevo API Error (${response.status}): ${errBody}`);
+            }
+
+            const info = await response.json();
 
             return sendJson(200, {
               success: true,
               timestamp: new Date().toISOString(),
               recipient: toEmail,
-              cc: mailOptions.cc,
+              cc: brevoPayload.cc ? brevoPayload.cc.map((c: any) => c.email).join(', ') : '',
               messageId: info.messageId,
-              message: 'Email successfully dispatched via Nodemailer',
+              message: 'Email successfully dispatched via Brevo HTTP API',
             });
           } catch (error: any) {
-            console.error('Nodemailer Dispatch error:', error);
+            console.error('Brevo Dispatch error:', error);
             return sendJson(500, { error: error.message || 'Dispatch failed' });
           }
         }

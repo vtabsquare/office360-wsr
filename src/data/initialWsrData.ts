@@ -268,8 +268,8 @@ export const INITIAL_SCHEDULE_CONFIG: BotScheduleConfig = {
 };
 
 export const INITIAL_SUPABASE_CONFIG: SupabaseConfig = {
-  projectUrl: import.meta.env.VITE_SUPABASE_URL || 'https://ofzdvvjkqgnheogwfdnk.supabase.co',
-  apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9memR2dmprcWduaGVvZ3dmZG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM0NTYwMDAsImV4cCI6MjAzOTAzMjAwMH0.sample_public_anon_key',
+  projectUrl: import.meta.env.VITE_SUPABASE_URL,
+  apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   connected: true,
   selectedTable: 'wsr_weekly_summary',
   lastSynced: '2026-08-20T05:15:00Z',

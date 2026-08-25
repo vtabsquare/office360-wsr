@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -350,60 +350,62 @@ app.post('/api/bot/dispatch-now', async (req, res) => {
       return res.status(500).json({ 
         error: 'SMTP_PASSWORD is not configured in the backend. Please add an App Password to your .env file.' 
       });
-    }
+    }    try {
+      const brevoApiKey = process.env.BREVO_API_KEY;
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      family: 4, // Force IPv4 to fix Render's ENETUNREACH IPv6 issue
-      auth: {
-        user: smtpEmail,
-        pass: smtpPassword,
-      },
-    });
+      const brevoPayload: any = {
+        sender: { email: smtpEmail, name: "OfficeHub360 WSR Bot" },
+        to: [{ email: toEmail }],
+        subject: subject,
+        htmlContent: htmlBody,
+      };
 
-    const mailOptions: any = {
-      from: `"OfficeHub360 WSR Bot" <${smtpEmail}>`,
-      to: toEmail,
-      subject: subject,
-      html: htmlBody,
-    };
-
-    if (ccEmails && Array.isArray(ccEmails) && ccEmails.length > 0) {
-      const validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
-      if (validCc.length > 0) {
-        mailOptions.cc = validCc.join(', ');
+      if (ccEmails && Array.isArray(ccEmails) && ccEmails.length > 0) {
+        const validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
+        if (validCc.length > 0) {
+          brevoPayload.cc = validCc.map(c => ({ email: c.trim() }));
+        }
       }
-    }
 
-    if (pptxBase64 && pptxFileName) {
-      // Clean base64 string if it includes data URI scheme
-      const base64Data = pptxBase64.replace(/^data:.*,/, '');
-      mailOptions.attachments = [
-        {
-          filename: pptxFileName,
-          content: base64Data,
-          encoding: 'base64',
-          contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      if (pptxBase64 && pptxFileName) {
+        const base64Data = pptxBase64.replace(/^data:.*,/, '');
+        brevoPayload.attachment = [
+          {
+            content: base64Data,
+            name: pptxFileName
+          }
+        ];
+      }
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json'
         },
-      ];
+        body: JSON.stringify(brevoPayload)
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Brevo API Error (${response.status}): ${errBody}`);
+      }
+
+      const info = await response.json();
+
+      return res.status(200).json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        recipient: toEmail,
+        cc: brevoPayload.cc ? brevoPayload.cc.map((c: any) => c.email).join(', ') : '',
+        messageId: info.messageId,
+        message: 'Email successfully dispatched via Brevo HTTP API',
+      });
+    } catch (error: any) {
+      console.error('Brevo Dispatch error:', error);
+      return res.status(500).json({ error: error.message || 'Dispatch failed' });
     }
-
-    const info = await transporter.sendMail(mailOptions);
-
-    return res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      recipient: toEmail,
-      cc: mailOptions.cc,
-      messageId: info.messageId,
-      message: 'Email successfully dispatched via Nodemailer',
-    });
-  } catch (error: any) {
-    console.error('Nodemailer Dispatch error:', error);
-    return res.status(500).json({ error: error.message || 'Dispatch failed' });
-  }
 });
 
 // Helper for deterministic rule-based analysis when AI key is loading
