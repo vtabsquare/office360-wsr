@@ -350,13 +350,6 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
           }
 
           const smtpEmail = process.env.SMTP_EMAIL || process.env.VITE_GMAIL_SENDER_EMAIL || 'wsrvtabsquare@gmail.com';
-          const smtpPassword = process.env.SMTP_PASSWORD;
-
-          if (!smtpPassword) {
-            return sendJson(500, { 
-              error: 'SMTP_PASSWORD is not configured in the backend. Please add an App Password to your .env file.' 
-            });
-          }
 
           try {
             const brevoApiKey = process.env.BREVO_API_KEY;

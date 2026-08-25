@@ -344,13 +344,7 @@ app.post('/api/bot/dispatch-now', async (req, res) => {
     }
 
     const smtpEmail = process.env.SMTP_EMAIL || process.env.VITE_GMAIL_SENDER_EMAIL || 'wsrvtabsquare@gmail.com';
-    const smtpPassword = process.env.SMTP_PASSWORD;
-
-    if (!smtpPassword) {
-      return res.status(500).json({ 
-        error: 'SMTP_PASSWORD is not configured in the backend. Please add an App Password to your .env file.' 
-      });
-    }    try {
+    try {
       const brevoApiKey = process.env.BREVO_API_KEY;
 
       const brevoPayload: any = {

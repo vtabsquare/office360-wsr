@@ -224,12 +224,6 @@ export async function runAutomatedWsrDispatch() {
 
     const smtpEmail = process.env.SMTP_EMAIL || process.env.VITE_GMAIL_SENDER_EMAIL;
     if (!smtpEmail) throw new Error("SMTP_EMAIL is not configured");
-    const smtpPassword = process.env.SMTP_PASSWORD;
-
-    if (!smtpPassword) {
-      throw new Error('SMTP_PASSWORD is not configured.');
-    }
-
     try {
       const brevoApiKey = process.env.BREVO_API_KEY;
 
