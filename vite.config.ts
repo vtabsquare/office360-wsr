@@ -13,9 +13,6 @@ dns.setDefaultResultOrder('ipv4first');
 import { calculateDynamicDateRange } from './src/utils/dateUtils.js';
 import { initCron, getSchedule, updateSchedule } from './src/services/cronService.js';
 
-// Initialize cron scheduler for dev mode
-initCron();
-
 function apiServerPlugin(): Plugin {
   return {
     name: 'api-server-plugin',
@@ -545,7 +542,10 @@ function generateLocalWsrAnalysis(teams: any[], dateRange: string) {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
+  if (command === 'serve') {
+    initCron();
+  }
   return {
     plugins: [react(), tailwindcss(), apiServerPlugin()],
     resolve: {
