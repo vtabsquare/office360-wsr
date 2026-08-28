@@ -1,5 +1,7 @@
 import PptxGenJS from 'pptxgenjs';
+import pptxgen from 'pptxgenjs';
 import { TeamWsrData } from '../types/wsr';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 /**
  * Generates an executive PowerPoint (.pptx) deck matching the exact corporate WSR layout
@@ -8,7 +10,7 @@ import { TeamWsrData } from '../types/wsr';
 export async function generateWsrPptxDeck(
   teams: TeamWsrData[],
   reportTitle: string = 'Weekly Status Report (WSR)',
-  overallDateRange: string = '10th Aug – 15th Aug 2026',
+  overallDateRange: string = calculateDynamicDateRange(),
   managerName: string = 'Management Team'
 ): Promise<PptxGenJS> {
   const pptx = new PptxGenJS();
@@ -242,7 +244,7 @@ export async function generateWsrPptxDeck(
       fontFace: 'Arial'
     });
 
-    // 2. Date Range: Right side e.g. "10th Aug – 15th Aug 2026"
+    // 2. Date Range: Right side e.g. "10th Aug – 15th Aug 2026" (or dynamic)
     slide.addText(team.dateRange, {
       x: 7.2,
       y: 0.45,

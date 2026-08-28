@@ -10,6 +10,12 @@ import dns from 'dns';
 dotenv.config();
 dns.setDefaultResultOrder('ipv4first');
 
+import { calculateDynamicDateRange } from './src/utils/dateUtils.js';
+import { initCron, getSchedule, updateSchedule } from './src/services/cronService.js';
+
+// Initialize cron scheduler for dev mode
+initCron();
+
 function apiServerPlugin(): Plugin {
   return {
     name: 'api-server-plugin',
@@ -63,7 +69,7 @@ function apiServerPlugin(): Plugin {
         // 1. /api/gemini/analyze
         if (urlPath === '/api/gemini/analyze' && req.method === 'POST') {
           const body = await getBody();
-          const { teams = [], dateRange = '10th Aug – 15th Aug 2026' } = body || {};
+          const { teams = [], dateRange = calculateDynamicDateRange() } = body || {};
 
           if (!teams || !Array.isArray(teams)) {
             return sendJson(400, { error: 'Invalid teams data' });
@@ -217,6 +223,34 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
           }
         }
 
+        // 3.1. /api/bot/test-error
+        if (urlPath === '/api/bot/test-error' && req.method === 'GET') {
+          try {
+            const { testErrorDispatch } = await import('./src/services/backendWsrService.ts');
+            await testErrorDispatch();
+            return sendJson(200, { success: false, message: 'Should have thrown error' });
+          } catch (error: any) {
+            console.error('Test error simulated:', error);
+            return sendJson(500, { success: false, error: error.message });
+          }
+        }
+
+        // 3.5. /api/bot/schedule
+        if (urlPath === '/api/bot/schedule') {
+          if (req.method === 'GET') {
+            return sendJson(200, getSchedule());
+          }
+          if (req.method === 'POST') {
+            const body = await getBody();
+            try {
+              updateSchedule(body);
+              return sendJson(200, { success: true, message: 'Schedule updated and cron restarted.' });
+            } catch (error: any) {
+              return sendJson(500, { success: false, error: error.message });
+            }
+          }
+        }
+
         // 4. /api/wsr/live-data
         if (urlPath === '/api/wsr/live-data' && req.method === 'GET') {
           try {
@@ -229,14 +263,27 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
           }
         }
 
+        // 4.5. /api/wsr/dispatch-logs
+        if (urlPath === '/api/wsr/dispatch-logs' && req.method === 'GET') {
+          try {
+            const { getDispatchLogs } = await import('./src/services/dispatchLogger.ts');
+            const logs = getDispatchLogs();
+            return sendJson(200, logs);
+          } catch (error: any) {
+            console.error('Dispatch logs fetch error:', error);
+            return sendJson(500, { error: error.message });
+          }
+        }
+
         // 5. /api/wsr/approve
         if (urlPath === '/api/wsr/approve' && req.method === 'GET') {
           try {
             const parsedUrl = new URL(req.url!, `http://${req.headers.host}`);
             const managerEmail = parsedUrl.searchParams.get('managerEmail') || 'balamuraleee@gmail.com';
+            const logId = parsedUrl.searchParams.get('logId') || undefined;
             
             const { approveAndSendToManager } = await import('./src/services/backendWsrService.ts');
-            await approveAndSendToManager(managerEmail);
+            await approveAndSendToManager(managerEmail, logId);
 
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.statusCode = 200;
@@ -343,7 +390,7 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
         // 6. /api/bot/dispatch-now
         if (urlPath === '/api/bot/dispatch-now' && req.method === 'POST') {
           const body = await getBody();
-          const { toEmail, ccEmails, subject, htmlBody, pptxBase64, pptxFileName } = body || {};
+          const { toEmail, ccEmails, subject, htmlBody, htmlBodyNoApprove, pptxBase64, pptxFileName } = body || {};
           
           if (!toEmail || !htmlBody) {
             return sendJson(400, { error: 'Missing required email fields (toEmail, htmlBody)' });
@@ -361,11 +408,9 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
               htmlContent: htmlBody,
             };
 
+            let validCc: string[] = [];
             if (ccEmails && Array.isArray(ccEmails) && ccEmails.length > 0) {
-              const validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
-              if (validCc.length > 0) {
-                brevoPayload.cc = validCc.map(c => ({ email: c.trim() }));
-              }
+              validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
             }
 
             if (pptxBase64 && pptxFileName) {
@@ -395,11 +440,35 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
 
             const info = await response.json();
 
+            // Dispatch FYI email to CC recipients without the approve button
+            if (validCc.length > 0 && htmlBodyNoApprove) {
+              const ccPayload = {
+                ...brevoPayload,
+                to: validCc.map(c => ({ email: c.trim() })),
+                subject: `FYI: ${subject}`,
+                htmlContent: htmlBodyNoApprove
+              };
+              
+              const ccResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                  'accept': 'application/json',
+                  'api-key': brevoApiKey,
+                  'content-type': 'application/json'
+                },
+                body: JSON.stringify(ccPayload)
+              });
+              
+              if (!ccResponse.ok) {
+                console.warn(`[WSR Test] Failed to send FYI email to CCs: ${await ccResponse.text()}`);
+              }
+            }
+
             return sendJson(200, {
               success: true,
               timestamp: new Date().toISOString(),
               recipient: toEmail,
-              cc: brevoPayload.cc ? brevoPayload.cc.map((c: any) => c.email).join(', ') : '',
+              cc: validCc.length > 0 ? validCc.join(', ') : '',
               messageId: info.messageId,
               message: 'Email successfully dispatched via Brevo HTTP API',
             });
@@ -486,7 +555,9 @@ export default defineConfig(() => {
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      watch: process.env.DISABLE_HMR === 'true' ? null : {
+        ignored: ['**/schedule_config.json', '**/dispatch_logs.json'],
+      },
     },
   };
 });

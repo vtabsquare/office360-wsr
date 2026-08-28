@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "frequency": "weekly",
+  "dayOfWeek": "Friday",
+  "time": "15:39",
+  "timezone": "Asia/Kolkata (IST)",
+  "managerEmail": "sajathjsfi@gmail.com",
+  "ccEmails": [
+    "sohib.vtab@gmail.com"
+  ],
+  "includePptxAttachment": true,
+  "includeAiSummary": true,
+  "teamsToInclude": [
+    "team-python",
+    "team-hr-dashboard",
+    "team-westcoast",
+    "team-core-mobile"
+  ],
+  "lastRunTimestamp": "2026-08-17T08:30:00+05:30",
+  "nextRunTimestamp": "2026-08-24T08:30:00+05:30"
+}

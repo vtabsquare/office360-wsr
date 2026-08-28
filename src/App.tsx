@@ -11,14 +11,16 @@ import { PresentationMode } from './components/PresentationMode';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { AiChatDrawer } from './components/AiChatDrawer';
 import { SupabaseConnectorModal } from './components/SupabaseConnectorModal';
-import { EmailSchedulerModal } from './components/EmailSchedulerModal';
 import { BotExecutionModal } from './components/BotExecutionModal';
+import { EmailSchedulerModal } from './components/EmailSchedulerModal';
 import { CsvImportExportModal } from './components/CsvImportExportModal';
+import { MailTrackingCard } from './components/MailTrackingCard';
 import {
   INITIAL_TEAMS_DATA,
   INITIAL_SCHEDULE_CONFIG,
   INITIAL_SUPABASE_CONFIG
 } from './data/initialWsrData';
+import { calculateDynamicDateRange } from './utils/dateUtils';
 import {
   TeamWsrData,
   EmployeeWsrRecord,
@@ -104,6 +106,8 @@ function generateClientWsrAnalysis(teams: TeamWsrData[], dateRange: string): AiI
 }
 
 export default function App() {
+  const dynamicDateRange = calculateDynamicDateRange();
+  
   const [teams, setTeams] = useState<TeamWsrData[]>(() => {
     const saved = localStorage.getItem('officehub360_wsr_teams');
     if (!saved) return INITIAL_TEAMS_DATA;
@@ -148,8 +152,10 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [isBotExecutionOpen, setIsBotExecutionOpen] = useState(false);
+
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [isBotExecutionOpen, setIsBotExecutionOpen] = useState(false);
+  const [botExecutionMode, setBotExecutionMode] = useState<'normal' | 'error'>('normal');
   const [isDownloadingPptx, setIsDownloadingPptx] = useState(false);
 
   // AI Report
@@ -174,6 +180,8 @@ export default function App() {
     }
   };
 
+
+
   // Sync on initial load
   useEffect(() => {
     syncWithSupabase();
@@ -186,6 +194,12 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('officehub360_bot_schedule', JSON.stringify(scheduleConfig));
+    // Push to backend
+    fetch('/api/bot/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(scheduleConfig)
+    }).catch(console.error);
   }, [scheduleConfig]);
 
   useEffect(() => {
@@ -201,7 +215,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teams,
-          dateRange: '10th Aug – 15th Aug 2026'
+          dateRange: dynamicDateRange
         })
       });
 
@@ -215,17 +229,17 @@ export default function App() {
         data = JSON.parse(text);
       } catch (jsonErr) {
         console.warn('Invalid JSON from /api/gemini/analyze, using deterministic analysis:', jsonErr);
-        data = generateClientWsrAnalysis(teams, '10th Aug – 15th Aug 2026');
+        data = generateClientWsrAnalysis(teams, dynamicDateRange);
       }
 
       if (data && data.executiveSummary) {
         setAiReport(data);
       } else {
-        setAiReport(generateClientWsrAnalysis(teams, '10th Aug – 15th Aug 2026'));
+        setAiReport(generateClientWsrAnalysis(teams, dynamicDateRange));
       }
     } catch (err) {
       console.warn('Network or AI service unavailable, using client analysis:', err);
-      setAiReport(generateClientWsrAnalysis(teams, '10th Aug – 15th Aug 2026'));
+      setAiReport(generateClientWsrAnalysis(teams, dynamicDateRange));
     } finally {
       setIsAiLoading(false);
     }
@@ -315,9 +329,9 @@ export default function App() {
     try {
       await downloadWsrPptx(
         teams,
-        `OfficeHub360_Weekly_WSR_10th-15th_Aug_2026.pptx`,
+        `OfficeHub360_Weekly_WSR_${dynamicDateRange.replace(/ /g, '_')}.pptx`,
         'Weekly Status Report (WSR)',
-        '10th Aug – 15th Aug 2026'
+        dynamicDateRange
       );
     } catch (err) {
       console.error('PPTX generation error:', err);
@@ -419,7 +433,6 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenPresentation={() => setIsPresentationOpen(true)}
         onDownloadPptx={handleDownloadPptx}
-        onRunBotNow={() => setIsBotExecutionOpen(true)}
         onOpenAiInsights={() => setIsAiInsightsOpen(true)}
         onOpenChat={() => setIsChatOpen(true)}
         onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
@@ -440,7 +453,7 @@ export default function App() {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] animate-pulse"></span>
                     Current Reporting Cycle
                   </span>
-                  <span className="text-xs text-[#71717a] font-mono">10th Aug – 15th Aug 2026</span>
+                  <span className="text-xs text-[#71717a] font-mono">{dynamicDateRange}</span>
                 </div>
                 <h1 className="text-lg sm:text-2xl font-semibold tracking-tight text-white">
                   Weekly Status Analysis & Presentation Engine
@@ -456,12 +469,6 @@ export default function App() {
                   className="bg-[#27272a] text-white text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-[#3f3f46] hover:bg-[#323235] transition-all font-medium cursor-pointer"
                 >
                   Preview PPT
-                </button>
-                <button
-                  onClick={() => setIsBotExecutionOpen(true)}
-                  className="bg-white text-black text-xs px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold hover:bg-slate-100 shadow-md transition-all active:scale-95 cursor-pointer"
-                >
-                  Send Now
                 </button>
               </div>
             </div>
@@ -508,45 +515,7 @@ export default function App() {
 
           {/* Side Bento Card: Dispatch & Vault (lg:col-span-4) */}
           <div className="lg:col-span-4 flex flex-col gap-3 sm:gap-4">
-            {/* Automated Dispatch Bento Box */}
-            <div className="bg-[#18181b] border border-[#27272a] rounded-2xl p-4 sm:p-5 flex-1 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <span className="text-xs font-semibold text-white uppercase tracking-wider">Automated Dispatch</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              </div>
-
-              <div className="space-y-2 my-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#71717a] font-bold">RECIPIENT</span>
-                  <span className="text-white font-mono text-[11px] truncate max-w-[170px]">{import.meta.env.VITE_DEFAULT_MANAGER_EMAIL}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#71717a] font-bold">SCHEDULE</span>
-                  <span className="text-white">Mondays @ {scheduleConfig.time}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#71717a] font-bold">TEMPLATE</span>
-                  <span className="text-white">Corporate WSR v2.1</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#71717a] font-bold">ATTACHMENT</span>
-                  <span className="text-[#60a5fa] font-mono text-[11px]">WSR_10-15_Aug_2026.pptx</span>
-                </div>
-              </div>
-
-              <div className="mt-2.5 pt-2.5 sm:mt-3 sm:pt-3 border-t border-[#27272a] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                  <span className="text-xs text-[#71717a]">{teams.length + 2} Slides Ready</span>
-                </div>
-                <button
-                  onClick={() => setIsScheduleModalOpen(true)}
-                  className="text-xs text-[#60a5fa] hover:underline cursor-pointer"
-                >
-                  Configure
-                </button>
-              </div>
-            </div>
+            <MailTrackingCard scheduleConfig={scheduleConfig} />
 
             {/* Supabase Vault Bento Box */}
             <div className="bg-[#18181b] border border-[#27272a] rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3">
@@ -589,7 +558,6 @@ export default function App() {
             onUpdateMember={handleUpdateMember}
             onOpenPresentation={() => setIsPresentationOpen(true)}
             onDownloadPptx={handleDownloadPptx}
-            onRunBotNow={() => setIsBotExecutionOpen(true)}
           />
         )}
 
@@ -824,6 +792,12 @@ export default function App() {
           onRunBotNow={() => {
             setIsScheduleModalOpen(false);
             setIsBotExecutionOpen(true);
+            setBotExecutionMode('normal');
+          }}
+          onTestError={() => {
+            setIsScheduleModalOpen(false);
+            setIsBotExecutionOpen(true);
+            setBotExecutionMode('error');
           }}
         />
       )}
@@ -834,9 +808,12 @@ export default function App() {
           onClose={() => setIsBotExecutionOpen(false)}
           teams={teams}
           scheduleConfig={scheduleConfig}
+          mode={botExecutionMode}
           onDownloadPptx={handleDownloadPptx}
         />
       )}
+
+
 
       {isCsvModalOpen && (
         <CsvImportExportModal

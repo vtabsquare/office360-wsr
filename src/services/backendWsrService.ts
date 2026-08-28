@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { getWsrPptxBase64 } from './pptxGenerator';
 import nodemailer from 'nodemailer';
-import { generateWsrEmailHtml } from './gmailService'; // reusing HTML generation
+import { generateWsrEmailHtml, generateErrorEmailHtml } from './gmailService.js'; // reusing HTML generation
+import { saveDispatchLog, getDispatchLogById, DispatchLog } from './dispatchLogger.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -84,7 +85,7 @@ export async function fetchLiveWsrData(): Promise<any[]> {
     'EMP016': 'Management & Admin'
   };
 
-  const RESIGNED_EMPLOYEES = ['EMP001', 'EMP010'];
+  const RESIGNED_EMPLOYEES = ['1032', '1043'];
 
   // Group employees by custom teams
   const teamsMap = new Map<string, any>();
@@ -181,12 +182,54 @@ export async function fetchLiveWsrData(): Promise<any[]> {
   return Array.from(teamsMap.values()).filter((t: any) => t.members.length > 0);
 }
 
+async function dispatchErrorEmail(errorMsg: string, dateRange: string, mailFlow?: DispatchLog) {
+  const tlEmail = process.env.VITE_DEFAULT_TL_EMAIL;
+  const smtpEmail = process.env.SMTP_EMAIL || process.env.VITE_GMAIL_SENDER_EMAIL;
+  const brevoApiKey = process.env.BREVO_API_KEY;
+
+  if (!tlEmail || !smtpEmail || !brevoApiKey) {
+    console.warn('[WSR Cron] Missing config to send error email.');
+    return;
+  }
+
+  const htmlContent = generateErrorEmailHtml(errorMsg, dateRange, mailFlow);
+
+  const brevoPayload = {
+    sender: { email: smtpEmail, name: "OfficeHub360 WSR Bot" },
+    to: [{ email: tlEmail }],
+    subject: `🚨 URGENT: WSR Dispatch Failed - ${dateRange}`,
+    htmlContent: htmlContent,
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': brevoApiKey,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(brevoPayload)
+    });
+    if (!response.ok) {
+      console.error(`[WSR Cron] Failed to send error email: ${await response.text()}`);
+    } else {
+      console.log(`[WSR Cron] Error email successfully dispatched to TL.`);
+    }
+  } catch (err) {
+    console.error(`[WSR Cron] Exception while sending error email:`, err);
+  }
+}
+
 /**
  * Automates the entire dispatch pipeline:
  * Fetch Data -> Gen HTML -> Gen PPTX -> Send via SMTP
  */
 export async function runAutomatedWsrDispatch() {
   console.log('[WSR Cron] Starting automated WSR dispatch pipeline...');
+  let dateRange: string;
+  let mailFlow: DispatchLog;
+
   try {
     const teams = await fetchLiveWsrData();
     if (!teams || teams.length === 0) {
@@ -206,7 +249,16 @@ export async function runAutomatedWsrDispatch() {
       const suf = (day > 3 && day < 21) ? 'th' : (day % 10 === 1 ? 'st' : day % 10 === 2 ? 'nd' : day % 10 === 3 ? 'rd' : 'th');
       return `${day}${suf} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
     };
-    const dateRange = `${fmtDate(lastMonday)} – ${fmtDate(lastSaturday)} ${lastSaturday.getFullYear()}`;
+    dateRange = `${fmtDate(lastMonday)} – ${fmtDate(lastSaturday)} ${lastSaturday.getFullYear()}`;
+
+    const logId = `dispatch-${Date.now()}`;
+    mailFlow = {
+      id: logId,
+      week: dateRange,
+      calculatedAt: new Date().toISOString(),
+      status: 'CALCULATING'
+    };
+    saveDispatchLog(mailFlow);
 
     // TEAM LEAD APPROVAL WORKFLOW
     // 1. Initially route to TL without PPTX
@@ -219,8 +271,9 @@ export async function runAutomatedWsrDispatch() {
     const ccEmails = (process.env.VITE_DEFAULT_CC_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
     const subject = `ACTION REQUIRED: Approve Weekly Status Report (WSR) - ${dateRange}`;
 
+    mailFlow.sentToTlAt = new Date().toISOString();
     // Pass isApprovalRequest = true to generate the button
-    const htmlBody = generateWsrEmailHtml(teams, dateRange, managerEmail, true);
+    const htmlBody = generateWsrEmailHtml(teams, dateRange, managerEmail, true, logId, mailFlow);
 
     const smtpEmail = process.env.SMTP_EMAIL || process.env.VITE_GMAIL_SENDER_EMAIL;
     if (!smtpEmail) throw new Error("SMTP_EMAIL is not configured");
@@ -234,11 +287,9 @@ export async function runAutomatedWsrDispatch() {
         htmlContent: htmlBody,
       };
 
+      let validCc: string[] = [];
       if (ccEmails && Array.isArray(ccEmails) && ccEmails.length > 0) {
-        const validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
-        if (validCc.length > 0) {
-          brevoPayload.cc = validCc.map(c => ({ email: c.trim() }));
-        }
+        validCc = ccEmails.filter(c => c && c.trim().length > 0 && !c.includes('placeholder'));
       }
 
       const pptxBase64 = await getWsrPptxBase64(teams, 'Weekly Status Report (WSR)', dateRange);
@@ -269,13 +320,52 @@ export async function runAutomatedWsrDispatch() {
 
       const info = await response.json();
       console.log(`[WSR Cron] Approval email dispatched to TL with ID: ${info.messageId}`);
+      
+      // Dispatch FYI email to CC recipients without the approve button
+      if (validCc.length > 0) {
+        const htmlBodyNoApprove = generateWsrEmailHtml(teams, dateRange, managerEmail, false, logId, mailFlow);
+        const ccPayload = {
+          ...brevoPayload,
+          to: validCc.map(c => ({ email: c.trim() })),
+          subject: `FYI: Weekly Status Report (WSR) - ${dateRange}`,
+          htmlContent: htmlBodyNoApprove
+        };
+        
+        const ccResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'api-key': brevoApiKey,
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify(ccPayload)
+        });
+        
+        if (ccResponse.ok) {
+          const ccInfo = await ccResponse.json();
+          console.log(`[WSR Cron] FYI email dispatched to CCs with ID: ${ccInfo.messageId}`);
+        } else {
+          console.warn(`[WSR Cron] Failed to send FYI email to CCs: ${await ccResponse.text()}`);
+        }
+      }
+      
+      mailFlow.status = 'PENDING_APPROVAL';
+      saveDispatchLog(mailFlow);
+      
       return { success: true, messageId: info.messageId, status: 'pending_approval' };
     } catch (error: any) {
       console.error('Brevo Automated Dispatch Error:', error);
+      mailFlow.status = 'FAILED';
+      mailFlow.error = error.message;
+      saveDispatchLog(mailFlow);
+      await dispatchErrorEmail(error.message, dateRange, mailFlow);
       throw error;
     }
   } catch (error: any) {
     console.error('[WSR Cron] Dispatch failed:', error.message);
+    if (typeof dateRange !== 'undefined' && mailFlow) {
+      await dispatchErrorEmail(error.message, dateRange, mailFlow);
+    }
     throw error;
   }
 }
@@ -284,8 +374,15 @@ export async function runAutomatedWsrDispatch() {
  * Handles the click from the TL's email button.
  * Fetches latest data, generates the PPTX, and sends the final email to the manager.
  */
-export async function approveAndSendToManager(managerEmail: string) {
+export async function approveAndSendToManager(managerEmail: string, logId?: string) {
   console.log('[WSR Approval] TL Approved. Generating final deck and sending to manager...');
+  
+  let mailFlow = logId ? getDispatchLogById(logId) : undefined;
+  if (mailFlow) {
+    mailFlow.approvedByTlAt = new Date().toISOString();
+    saveDispatchLog(mailFlow);
+  }
+
   try {
     const teams = await fetchLiveWsrData();
     
@@ -302,7 +399,7 @@ export async function approveAndSendToManager(managerEmail: string) {
     };
     const dateRange = `${fmtDate(lastMonday)} – ${fmtDate(lastSaturday)} ${lastSaturday.getFullYear()}`;
 
-    const finalHtml = generateWsrEmailHtml(teams, dateRange, managerEmail, false);
+    const finalHtml = generateWsrEmailHtml(teams, dateRange, managerEmail, false, undefined, mailFlow);
     const pptxBase64 = await getWsrPptxBase64(teams, 'Weekly Status Report (WSR)', dateRange);
     const pptxFileName = `OfficeHub360_WSR_Deck_${dateRange.replace(/\s+/g, '_')}.pptx`;
     
@@ -349,9 +446,43 @@ export async function approveAndSendToManager(managerEmail: string) {
 
     const info = await response.json();
     console.log(`[WSR Approval] Success! Final email sent to manager: ${info.messageId}`);
+    
+    if (mailFlow) {
+      mailFlow.reachedManagerAt = new Date().toISOString();
+      mailFlow.status = 'COMPLETED';
+      saveDispatchLog(mailFlow);
+    }
+    
     return { success: true };
-  } catch (err: any) {
-    console.error('[WSR Approval] Failed:', err);
-    throw err;
+  } catch (error: any) {
+    console.error('[WSR Approval] Dispatch to manager failed:', error);
+    if (mailFlow) {
+      mailFlow.status = 'FAILED';
+      mailFlow.error = error.message;
+      saveDispatchLog(mailFlow);
+      await dispatchErrorEmail(`Approval Dispatch Failed: ${error.message}`, mailFlow.week, mailFlow);
+    }
+    throw error;
+  }
+}
+
+export async function testErrorDispatch() {
+  console.log('[WSR Cron] Simulating WSR dispatch failure for testing...');
+  let mailFlow: DispatchLog = {
+    id: `dispatch-errortest-${Date.now()}`,
+    week: 'Test Cycle',
+    calculatedAt: new Date().toISOString(),
+    status: 'CALCULATING'
+  };
+  saveDispatchLog(mailFlow);
+
+  try {
+    throw new Error("Simulated backend failure: Timeout waiting for database connection.");
+  } catch (error: any) {
+    mailFlow.status = 'FAILED';
+    mailFlow.error = error.message;
+    saveDispatchLog(mailFlow);
+    await dispatchErrorEmail(error.message, mailFlow.week, mailFlow);
+    throw error;
   }
 }

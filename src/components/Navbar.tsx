@@ -26,7 +26,6 @@ interface NavbarProps {
   setActiveTab: (tab: 'slides' | 'data' | 'insights') => void;
   onOpenPresentation: () => void;
   onDownloadPptx: () => void;
-  onRunBotNow: () => void;
   onOpenAiInsights: () => void;
   onOpenChat: () => void;
   onOpenSupabaseModal: () => void;
@@ -41,7 +40,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenPresentation,
   onDownloadPptx,
-  onRunBotNow,
   onOpenAiInsights,
   onOpenChat,
   onOpenSupabaseModal,
@@ -95,16 +93,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action Buttons in Bento Palette */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Run Bot Now / Send to Manager */}
-            <button
-              onClick={onRunBotNow}
-              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-black text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
-              title="Run Automated AI Bot & Send WSR Email with PPT Attachment"
-            >
-              <Send className="w-3.5 h-3.5 text-blue-600" />
-              <span>Send Now</span>
-            </button>
-
             {/* Always Visible Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

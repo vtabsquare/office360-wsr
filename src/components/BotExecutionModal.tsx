@@ -20,12 +20,14 @@ import confetti from 'canvas-confetti';
 import { TeamWsrData, BotScheduleConfig } from '../types/wsr';
 import { googleSignIn, getAccessToken, auth, logoutGoogle, clearAuthCache, hasValidToken } from '../services/googleAuthService';
 import { sendWsrViaGmail, generateWsrEmailHtml, SendEmailResult } from '../services/gmailService';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 interface BotExecutionModalProps {
   isOpen: boolean;
   onClose: () => void;
   teams: TeamWsrData[];
   scheduleConfig: BotScheduleConfig;
+  mode?: 'normal' | 'error';
   onDownloadPptx: () => void;
 }
 
@@ -42,6 +44,7 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
   onClose,
   teams,
   scheduleConfig,
+  mode = 'normal',
   onDownloadPptx
 }) => {
   const [hasConfirmedSend, setHasConfirmedSend] = useState(false);
@@ -112,7 +115,7 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
     setIsRunning(true);
     setHasConfirmedSend(true);
 
-    const dateRange = '10th Aug – 15th Aug 2026';
+    const dateRange = calculateDynamicDateRange();
 
     try {
       // Step 0: Supabase
@@ -144,22 +147,32 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
       const isApprovalRequest = true; // Route to TL for approval first
 
       const htmlBody = generateWsrEmailHtml(teams, dateRange, managerEmail, isApprovalRequest);
+      const htmlBodyNoApprove = generateWsrEmailHtml(teams, dateRange, managerEmail, false);
       const subject = `ACTION REQUIRED: Approve Weekly Status Report (WSR) - ${dateRange}`;
 
       const ccEmailsString = import.meta.env.VITE_DEFAULT_CC_EMAILS || '';
       const ccEmails = ccEmailsString.split(',').map((e: string) => e.trim()).filter(Boolean);
 
-      const result = await sendWsrViaGmail({
-        toEmail: tlEmail,
-        ccEmails: ccEmails,
-        subject,
-        htmlBody,
-        teams,
-        dateRange,
-        attachPptx: true // TL wants to preview the PPTX before approving
-      });
+      if (mode === 'error') {
+        const testRes = await fetch('/api/bot/test-error');
+        if (!testRes.ok) {
+          const errData = await testRes.json();
+          throw new Error(errData.error || 'Simulated error occurred.');
+        }
+      } else {
+        const result = await sendWsrViaGmail({
+          toEmail: tlEmail,
+          ccEmails: ccEmails,
+          subject,
+          htmlBody,
+          htmlBodyNoApprove,
+          teams,
+          dateRange,
+          attachPptx: true // TL wants to preview the PPTX before approving
+        });
+        setEmailResult(result);
+      }
 
-      setEmailResult(result);
       setCurrentStepIndex(5);
       setIsFinished(true);
       setIsRunning(false);
@@ -239,7 +252,7 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
                 <div className="flex items-center justify-between py-1 border-b border-[#27272a]">
                   <span className="text-[#a1a1aa]">Subject:</span>
                   <span className="text-white font-medium">
-                    Weekly Status Report (WSR) - 10th Aug – 15th Aug 2026
+                    Weekly Status Report (WSR) - {calculateDynamicDateRange()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-1">
@@ -398,7 +411,7 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
               Weekly WSR Email & PPT Deck Delivered to Gmail!
             </div>
             <p className="text-xs text-[#d4d4d8] leading-relaxed">
-              The automated WSR report for <strong>10th Aug – 15th Aug 2026</strong> has been delivered to{' '}
+              The automated WSR report for <strong>{calculateDynamicDateRange()}</strong> has been delivered to{' '}
               <strong className="text-white">{scheduleConfig.managerEmail}</strong>
               {scheduleConfig.ccEmails.length > 0 && (
                 <> (CC: {scheduleConfig.ccEmails.join(', ')})</>

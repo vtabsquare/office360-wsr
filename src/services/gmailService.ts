@@ -1,12 +1,15 @@
 import { getAccessToken } from './googleAuthService';
 import { TeamWsrData } from '../types/wsr';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 import { getWsrPptxBase64 } from './pptxGenerator';
+import type { DispatchLog } from './dispatchLogger';
 
 export interface SendWsrEmailOptions {
   toEmail: string;
   ccEmails?: string[];
   subject: string;
   htmlBody: string;
+  htmlBodyNoApprove?: string;
   teams: TeamWsrData[];
   dateRange?: string;
   attachPptx?: boolean;
@@ -34,7 +37,7 @@ export async function sendWsrViaGmail(options: SendWsrEmailOptions): Promise<Sen
       pptxBase64 = await getWsrPptxBase64(
         options.teams,
         'Weekly Status Report (WSR)',
-        options.dateRange || '10th Aug – 15th Aug 2026'
+        options.dateRange || calculateDynamicDateRange()
       );
     } catch (e) {
       console.warn('Failed to compile PPTX attachment, sending HTML summary email only:', e);
@@ -51,6 +54,7 @@ export async function sendWsrViaGmail(options: SendWsrEmailOptions): Promise<Sen
       ccEmails: options.ccEmails,
       subject: options.subject,
       htmlBody: options.htmlBody,
+      htmlBodyNoApprove: options.htmlBodyNoApprove,
       pptxBase64: pptxBase64,
       pptxFileName: fileName
     })
@@ -86,9 +90,11 @@ export async function sendWsrViaGmail(options: SendWsrEmailOptions): Promise<Sen
  */
 export function generateWsrEmailHtml(
   teams: TeamWsrData[],
-  dateRange: string = '10th Aug – 15th Aug 2026',
+  dateRange: string = calculateDynamicDateRange(),
   managerEmail: string = 'balamuraleee@gmail.com',
-  isApprovalRequest: boolean = false
+  isApprovalRequest: boolean = false,
+  logId?: string,
+  mailFlow?: DispatchLog
 ): string {
   let appUrl = 'http://localhost:5173';
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_URL) {
@@ -99,7 +105,10 @@ export function generateWsrEmailHtml(
     appUrl = window.location.origin;
   }
   
-  const approvalUrl = `${appUrl}/api/wsr/approve?managerEmail=${encodeURIComponent(managerEmail)}`;
+  let approvalUrl = `${appUrl}/api/wsr/approve?managerEmail=${encodeURIComponent(managerEmail)}`;
+  if (logId) {
+    approvalUrl += `&logId=${encodeURIComponent(logId)}`;
+  }
   const totalHours = teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.totalHours, 0), 0);
   const productiveHours = teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.productiveHours, 0), 0);
   const nonProductiveHours = teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.nonProductiveHours, 0), 0);
@@ -220,6 +229,43 @@ export function generateWsrEmailHtml(
             </td>
           </tr>
 
+          <!-- Mail Flow Audit (Conditional) -->
+          ${mailFlow ? `
+          <tr>
+            <td style="padding: 10px 35px 25px 35px;">
+              <h2 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                Mail Flow Audit Trail
+              </h2>
+              <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 12px; color: #334155;">
+                  <tr>
+                    <td style="padding: 4px 0;"><strong>Calculated At:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace;">${new Date(mailFlow.calculatedAt).toLocaleString()}</td>
+                  </tr>
+                  ${mailFlow.sentToTlAt ? `
+                  <tr>
+                    <td style="padding: 4px 0;"><strong>Dispatched to TL:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace;">${new Date(mailFlow.sentToTlAt).toLocaleString()}</td>
+                  </tr>
+                  ` : ''}
+                  ${mailFlow.approvedByTlAt ? `
+                  <tr>
+                    <td style="padding: 4px 0; color: #16a34a;"><strong>Approved By TL:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace; color: #16a34a;">${new Date(mailFlow.approvedByTlAt).toLocaleString()}</td>
+                  </tr>
+                  ` : ''}
+                  ${mailFlow.reachedManagerAt ? `
+                  <tr>
+                    <td style="padding: 4px 0; color: #0284c7;"><strong>Reached Manager:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace; color: #0284c7;">${new Date(mailFlow.reachedManagerAt).toLocaleString()}</td>
+                  </tr>
+                  ` : ''}
+                </table>
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
           <!-- Approval Button (Conditional) -->
           ${isApprovalRequest ? `
           <tr>
@@ -242,6 +288,175 @@ export function generateWsrEmailHtml(
               </div>
               <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
                 Dispatched automatically by OfficeHub360 WSR Intelligence Engine to ${managerEmail}.
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+export function generateErrorEmailHtml(
+  errorMessage: string,
+  dateRange: string,
+  mailFlow?: DispatchLog,
+  failedStepId?: string
+): string {
+  
+  const steps = [
+    { id: 'supabase-pull', title: 'Extract Supabase Timesheets', desc: 'Querying project ofzdvvjkqgnheogwfdnk for weekly worklogs & task logs...' },
+    { id: 'wsr-calc', title: 'Compute WSR Team Metrics', desc: 'Aggregating members across teams...' },
+    { id: 'ai-analysis', title: 'Run Gemini AI Intelligence', desc: 'Analyzing overtime anomalies, burnout indicators, and generating executive summary...' },
+    { id: 'pptx-build', title: 'Compile PPTX Slide Deck', desc: 'Rendering 16:9 widescreen PowerPoint deck with Black & Cyan departmental slides...' },
+    { id: 'email-dispatch', title: `Send via Gmail to ${process.env.VITE_DEFAULT_MANAGER_EMAIL || 'Manager'}`, desc: 'Sending authenticated RFC 2822 email with attached .pptx deck through Gmail API...' }
+  ];
+
+  // Determine which steps are done vs failed
+  let hitFailed = false;
+  if (!failedStepId) failedStepId = 'email-dispatch'; // fallback to last step if not provided
+
+  const renderedSteps = steps.map(s => {
+    let status = 'DELIVERED';
+    if (s.id === failedStepId) {
+      status = 'FAILED';
+      hitFailed = true;
+    } else if (hitFailed) {
+      status = 'QUEUED';
+    }
+
+    let bgColor = status === 'FAILED' ? '#450a0a' : status === 'DELIVERED' ? '#022c22' : '#0f0f11';
+    let borderColor = status === 'FAILED' ? '#7f1d1d' : status === 'DELIVERED' ? '#064e3b' : '#27272a';
+    let iconColor = status === 'FAILED' ? '#ef4444' : status === 'DELIVERED' ? '#10b981' : '#71717a';
+    let iconBg = status === 'FAILED' ? '#7f1d1d40' : status === 'DELIVERED' ? '#064e3b40' : '#27272a';
+    let statusColor = status === 'FAILED' ? '#fca5a5' : status === 'DELIVERED' ? '#34d399' : '#a1a1aa';
+    
+    // Icon logic (using simple Unicode/SVG for email)
+    const iconSvg = status === 'FAILED' 
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+
+    return `
+      <div style="background-color: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td width="48" valign="top">
+              <div style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid ${iconColor}; display: flex; align-items: center; justify-content: center; color: ${iconColor}; margin-top: 2px;">
+                ${iconSvg}
+              </div>
+            </td>
+            <td valign="top">
+              <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;">${s.title}</div>
+              <div style="font-size: 11px; color: #a1a1aa; line-height: 1.4;">${s.desc}</div>
+            </td>
+            <td width="80" align="right" valign="top">
+              <div style="font-size: 10px; font-weight: 700; font-family: monospace; letter-spacing: 0.5px; color: ${statusColor}; margin-top: 2px;">
+                ${status}
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+  }).join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CRITICAL FAILURE: WSR Dispatch Error</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #09090b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #09090b; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #18181b; border: 1px solid #27272a; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 25px 35px; border-bottom: 1px solid #27272a; background-color: #18181b;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #ef4444; letter-spacing: -0.5px; display: flex; align-items: center;">
+                      ⚠️ CRITICAL ALERT: WSR DISPATCH FAILED
+                    </h1>
+                    <div style="font-size: 12px; color: #a1a1aa; margin-top: 6px;">
+                      Cycle: ${dateRange}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Error Details -->
+          <tr>
+            <td style="padding: 25px 35px 15px 35px;">
+              <div style="background-color: #450a0a; border: 1px solid #7f1d1d; border-radius: 12px; padding: 16px;">
+                <h2 style="font-size: 13px; font-weight: 700; color: #fca5a5; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Error Description
+                </h2>
+                <div style="font-family: monospace; font-size: 12px; color: #fecaca; line-height: 1.5; white-space: pre-wrap;">${errorMessage}</div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Mail Flow Audit -->
+          ${mailFlow ? `
+          <tr>
+            <td style="padding: 10px 35px 25px 35px;">
+              <h2 style="font-size: 13px; font-weight: 700; color: #e4e4e7; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                Mail Flow State at Failure
+              </h2>
+              <div style="background-color: #0f0f11; border: 1px solid #27272a; border-radius: 10px; padding: 16px;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 12px; color: #a1a1aa;">
+                  <tr>
+                    <td style="padding: 4px 0;"><strong>Calculated At:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace;">${mailFlow.calculatedAt ? new Date(mailFlow.calculatedAt).toLocaleString() : 'N/A'}</td>
+                  </tr>
+                  ${mailFlow.sentToTlAt ? `
+                  <tr>
+                    <td style="padding: 4px 0;"><strong>Dispatched to TL:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace;">${new Date(mailFlow.sentToTlAt).toLocaleString()}</td>
+                  </tr>
+                  ` : ''}
+                  ${mailFlow.approvedByTlAt ? `
+                  <tr>
+                    <td style="padding: 4px 0;"><strong>Approved By TL:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace;">${new Date(mailFlow.approvedByTlAt).toLocaleString()}</td>
+                  </tr>
+                  ` : ''}
+                  <tr>
+                    <td style="padding: 4px 0; color: #ef4444;"><strong>Failed At:</strong></td>
+                    <td style="padding: 4px 0; font-family: monospace; color: #ef4444;">${new Date().toLocaleString()}</td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Bot Execution Flow -->
+          <tr>
+            <td style="padding: 10px 35px 25px 35px;">
+              <h2 style="font-size: 13px; font-weight: 700; color: #e4e4e7; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                Bot Execution Flow
+              </h2>
+              ${renderedSteps}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #09090b; border-top: 1px solid #27272a; padding: 20px 35px; text-align: center;">
+              <div style="font-size: 12px; color: #71717a; line-height: 1.5;">
+                Action Required: Please review backend server logs and resolve the issue. The automated cron will retry next week if not manually triggered.
               </div>
             </td>
           </tr>

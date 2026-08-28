@@ -6,7 +6,10 @@ import { GoogleGenAI, Type } from '@google/genai';
 import nodemailer from 'nodemailer';
 import cron from 'node-cron';
 import dns from 'dns';
-import { runAutomatedWsrDispatch, fetchLiveWsrData } from './src/services/backendWsrService';
+import { runAutomatedWsrDispatch, fetchLiveWsrData } from './src/services/backendWsrService.js';
+import { getDispatchLogs } from './src/services/dispatchLogger.js';
+import { calculateDynamicDateRange } from './src/utils/dateUtils.js';
+import { initCron, getSchedule, updateSchedule } from './src/services/cronService.js';
 
 dotenv.config();
 dns.setDefaultResultOrder('ipv4first');
@@ -19,12 +22,21 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Schedule the Automated WSR Dispatch (Every Monday at 8:30 AM)
-cron.schedule('30 8 * * 1', () => {
-  console.log('[Cron] Triggering weekly WSR dispatch...');
-  runAutomatedWsrDispatch().catch(console.error);
-}, {
-  timezone: "Asia/Kolkata"
+// Initialize dynamic cron
+initCron();
+
+// API Endpoints for dynamic schedule
+app.get('/api/bot/schedule', (req, res) => {
+  res.json(getSchedule());
+});
+
+app.post('/api/bot/schedule', (req, res) => {
+  try {
+    updateSchedule(req.body);
+    res.json({ success: true, message: 'Schedule updated and cron restarted.' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Manual trigger endpoint for testing the cron job
@@ -42,6 +54,16 @@ app.get('/api/wsr/live-data', async (req, res) => {
   try {
     const data = await fetchLiveWsrData();
     res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint to fetch dispatch logs for the UI flow card
+app.get('/api/wsr/dispatch-logs', (req, res) => {
+  try {
+    const logs = getDispatchLogs();
+    res.json(logs);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -66,7 +88,7 @@ if (apiKey) {
 // 1. Gemini AI WSR Analysis Endpoint
 // ----------------------------------------------------------------------
 app.post('/api/gemini/analyze', async (req, res) => {
-  const { teams = [], dateRange = '10th Aug – 15th Aug 2026' } = req.body || {};
+  const { teams = [], dateRange = calculateDynamicDateRange() } = req.body || {};
 
   if (!teams || !Array.isArray(teams)) {
     return res.status(400).json({ error: 'Invalid teams data provided.' });
@@ -230,9 +252,10 @@ Provide a helpful, precise, formatted response (using markdown bullet points, bo
 app.get('/api/wsr/approve', async (req, res) => {
   try {
     const managerEmail = (req.query.managerEmail as string) || process.env.VITE_DEFAULT_MANAGER_EMAIL;
+    const logId = req.query.logId as string;
     if (!managerEmail) throw new Error("Manager email not configured");
     const { approveAndSendToManager } = await import('./src/services/backendWsrService.js');
-    await approveAndSendToManager(managerEmail);
+    await approveAndSendToManager(managerEmail, logId);
 
     res.send(`
       <!DOCTYPE html>

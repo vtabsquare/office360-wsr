@@ -13,21 +13,20 @@ import {
   Info
 } from 'lucide-react';
 import { TeamWsrData, EmployeeWsrRecord } from '../types/wsr';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 interface PptxSlidePreviewProps {
   teams: TeamWsrData[];
   onUpdateMember: (teamId: string, memberId: string, updates: Partial<EmployeeWsrRecord>) => void;
   onOpenPresentation: () => void;
   onDownloadPptx: () => void;
-  onRunBotNow: () => void;
 }
 
 export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
   teams,
   onUpdateMember,
   onOpenPresentation,
-  onDownloadPptx,
-  onRunBotNow
+  onDownloadPptx
 }) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -144,7 +143,7 @@ export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
               <div className="grid grid-cols-3 gap-4 my-auto">
                 <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200">
                   <div className="text-[11px] font-bold text-slate-500 uppercase">Period</div>
-                  <div className="text-lg font-bold text-slate-800 mt-1">10th Aug – 15th Aug 2026</div>
+                  <div className="text-lg font-bold text-slate-800 mt-1">{calculateDynamicDateRange()}</div>
                   <div className="text-xs text-slate-500 mt-0.5">Week 33 Report</div>
                 </div>
                 <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200">

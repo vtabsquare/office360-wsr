@@ -1,0 +1,74 @@
+[
+  {
+    "id": "dispatch-errortest-1787911826976",
+    "week": "Test Cycle",
+    "calculatedAt": "2026-08-28T10:10:26.976Z",
+    "status": "FAILED",
+    "error": "Simulated backend failure: Timeout waiting for database connection."
+  },
+  {
+    "id": "dispatch-1787911742519",
+    "week": "17th Aug – 22nd Aug 2026",
+    "calculatedAt": "2026-08-28T10:09:02.519Z",
+    "status": "COMPLETED",
+    "sentToTlAt": "2026-08-28T10:09:02.520Z",
+    "approvedByTlAt": "2026-08-28T10:09:52.601Z",
+    "reachedManagerAt": "2026-08-28T10:09:57.231Z"
+  },
+  {
+    "id": "dispatch-errortest-1787903298232",
+    "week": "Test Cycle",
+    "calculatedAt": "2026-08-28T07:48:18.232Z",
+    "status": "FAILED",
+    "error": "Simulated backend failure: Timeout waiting for database connection."
+  },
+  {
+    "id": "dispatch-1787902382611",
+    "week": "17th Aug – 22nd Aug 2026",
+    "calculatedAt": "2026-08-28T07:33:02.611Z",
+    "status": "FAILED",
+    "sentToTlAt": "2026-08-28T07:33:02.613Z",
+    "error": "Brevo API Error (401): {\"message\":\"Key not found\",\"code\":\"unauthorized\"}\n"
+  },
+  {
+    "id": "dispatch-1787902262462",
+    "week": "17th Aug – 22nd Aug 2026",
+    "calculatedAt": "2026-08-28T07:31:02.462Z",
+    "status": "PENDING_APPROVAL",
+    "sentToTlAt": "2026-08-28T07:31:02.463Z"
+  },
+  {
+    "id": "dispatch-errortest-1787901589483",
+    "week": "Test Cycle",
+    "calculatedAt": "2026-08-28T07:19:49.483Z",
+    "status": "FAILED",
+    "error": "Simulated backend failure: Timeout waiting for database connection."
+  },
+  {
+    "id": "dispatch-1787899862104",
+    "week": "17th Aug – 22nd Aug 2026",
+    "calculatedAt": "2026-08-28T06:51:02.104Z",
+    "status": "COMPLETED",
+    "sentToTlAt": "2026-08-28T06:51:02.106Z",
+    "approvedByTlAt": "2026-08-28T06:52:07.024Z",
+    "reachedManagerAt": "2026-08-28T06:52:11.173Z"
+  },
+  {
+    "id": "dispatch-1787899622176",
+    "week": "17th Aug – 22nd Aug 2026",
+    "calculatedAt": "2026-08-28T06:47:02.176Z",
+    "status": "COMPLETED",
+    "sentToTlAt": "2026-08-28T06:47:02.178Z",
+    "approvedByTlAt": "2026-08-28T06:47:47.611Z",
+    "reachedManagerAt": "2026-08-28T06:47:51.009Z"
+  },
+  {
+    "id": "dispatch-1787899382290",
+    "week": "17th Aug – 22nd Aug 2026",
+    "calculatedAt": "2026-08-28T06:43:02.290Z",
+    "status": "COMPLETED",
+    "sentToTlAt": "2026-08-28T06:43:02.294Z",
+    "approvedByTlAt": "2026-08-28T06:45:05.651Z",
+    "reachedManagerAt": "2026-08-28T06:45:09.953Z"
+  }
+]

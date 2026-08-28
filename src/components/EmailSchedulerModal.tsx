@@ -19,13 +19,15 @@ interface EmailSchedulerModalProps {
   onSaveConfig: (updated: BotScheduleConfig) => void;
   onClose: () => void;
   onRunBotNow: () => void;
+  onTestError: () => void;
 }
 
 export const EmailSchedulerModal: React.FC<EmailSchedulerModalProps> = ({
   config,
   onSaveConfig,
   onClose,
-  onRunBotNow
+  onRunBotNow,
+  onTestError
 }) => {
   const [formData, setFormData] = useState<BotScheduleConfig>({ ...config });
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -263,17 +265,29 @@ export const EmailSchedulerModal: React.FC<EmailSchedulerModalProps> = ({
 
           {/* Footer Actions */}
           <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onRunBotNow();
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium border border-slate-700"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Test Bot & Send Email Now</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onTestError();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/40 text-red-400 text-xs font-medium border border-red-900/50 transition-colors"
+              >
+                <span>Test Error Flow</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onRunBotNow();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-medium border border-slate-700 transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Test Bot & Send Email Now</span>
+              </button>
+            </div>
 
             <div className="flex items-center gap-2">
               <button

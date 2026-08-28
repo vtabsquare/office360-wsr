@@ -1,10 +1,11 @@
 import { TeamWsrData, BotScheduleConfig, SupabaseConfig } from '../types/wsr';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 export const INITIAL_TEAMS_DATA: TeamWsrData[] = [
   {
     id: 'team-python',
     name: 'Python Team',
-    dateRange: '10th Aug – 15th Aug 2026',
+    dateRange: calculateDynamicDateRange(),
     themeColor: '#0097a7',
     leadName: 'Sohib Akhtar',
     members: [
@@ -88,7 +89,7 @@ export const INITIAL_TEAMS_DATA: TeamWsrData[] = [
   {
     id: 'team-hr-dashboard',
     name: 'HR Dashboard Team',
-    dateRange: '10th Aug – 14th Aug 2026',
+    dateRange: calculateDynamicDateRange(),
     themeColor: '#00838f',
     leadName: 'Mohamed Yasin',
     members: [
@@ -142,7 +143,7 @@ export const INITIAL_TEAMS_DATA: TeamWsrData[] = [
   {
     id: 'team-westcoast',
     name: 'Westcoast Team',
-    dateRange: '10th Aug – 14th Aug 2026',
+    dateRange: calculateDynamicDateRange(),
     themeColor: '#0288d1',
     leadName: 'Sanjay Janakiraman',
     members: [
@@ -211,7 +212,7 @@ export const INITIAL_TEAMS_DATA: TeamWsrData[] = [
   {
     id: 'team-core-mobile',
     name: 'Admin Team',
-    dateRange: '10th Aug – 15th Aug 2026',
+    dateRange: calculateDynamicDateRange(),
     themeColor: '#0f766e',
     leadName: 'Vignesh Raja S',
     members: [

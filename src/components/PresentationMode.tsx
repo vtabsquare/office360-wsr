@@ -10,6 +10,7 @@ import {
   Send
 } from 'lucide-react';
 import { TeamWsrData } from '../types/wsr';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 interface PresentationModeProps {
   teams: TeamWsrData[];
@@ -114,7 +115,7 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
               <div className="grid grid-cols-3 gap-6 my-auto">
                 <div className="p-5 rounded-2xl bg-white shadow-sm border border-slate-200">
                   <div className="text-xs font-bold text-slate-400 uppercase">Period</div>
-                  <div className="text-2xl font-bold text-slate-900 mt-1">10th Aug – 15th Aug 2026</div>
+                  <div className="text-2xl font-bold text-slate-900 mt-1">{calculateDynamicDateRange()}</div>
                   <div className="text-sm text-slate-500 mt-1">WSR Cycle 33</div>
                 </div>
                 <div className="p-5 rounded-2xl bg-white shadow-sm border border-slate-200">

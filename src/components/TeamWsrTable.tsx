@@ -16,6 +16,7 @@ import {
   Upload
 } from 'lucide-react';
 import { TeamWsrData, EmployeeWsrRecord } from '../types/wsr';
+import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 interface TeamWsrTableProps {
   teams: TeamWsrData[];
@@ -54,7 +55,7 @@ export const TeamWsrTable: React.FC<TeamWsrTableProps> = ({
 
   // New team state
   const [newTeamName, setNewTeamName] = useState('');
-  const [newTeamDateRange, setNewTeamDateRange] = useState('10th Aug – 15th Aug 2026');
+  const [newTeamDateRange, setNewTeamDateRange] = useState(calculateDynamicDateRange());
 
   const currentTeam = teams.find((t) => t.id === selectedTeamId) || teams[0];
 
@@ -241,7 +242,7 @@ export const TeamWsrTable: React.FC<TeamWsrTableProps> = ({
                   value={currentTeam.dateRange}
                   onChange={(e) => onUpdateTeamDateRange(currentTeam.id, e.target.value)}
                   className="text-xs text-[#d4d4d8] bg-[#09090b] px-2.5 py-0.5 rounded-lg border border-[#27272a] focus:outline-none focus:border-[#3b82f6] w-52 font-mono"
-                  placeholder="e.g. 10th Aug – 15th Aug 2026"
+                  placeholder={`e.g. ${calculateDynamicDateRange()}`}
                 />
               </div>
             </div>
@@ -595,7 +596,7 @@ export const TeamWsrTable: React.FC<TeamWsrTableProps> = ({
                   type="text"
                   value={newTeamDateRange}
                   onChange={(e) => setNewTeamDateRange(e.target.value)}
-                  placeholder="e.g. 10th Aug – 15th Aug 2026"
+                  placeholder={`e.g. ${calculateDynamicDateRange()}`}
                   className="w-full bg-[#09090b] border border-[#27272a] rounded-xl px-3 py-2 text-xs text-white focus:border-[#3b82f6]"
                 />
               </div>
