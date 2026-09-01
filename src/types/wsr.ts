@@ -11,6 +11,7 @@ export interface EmployeeWsrRecord {
   billableHours: number;
   nonBillableHours: number;
   holidaysAvailed: number;
+  permissionHours?: number;
   notes?: string;
   avatar?: string;
   role?: string;

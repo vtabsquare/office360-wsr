@@ -1,5 +1,21 @@
 [
   {
+    "id": "dispatch-1788276002979",
+    "week": "24th Aug – 29th Aug 2026",
+    "calculatedAt": "2026-09-01T15:20:02.979Z",
+    "status": "COMPLETED",
+    "sentToTlAt": "2026-09-01T15:20:02.980Z",
+    "approvedByTlAt": "2026-09-01T15:20:55.749Z",
+    "reachedManagerAt": "2026-09-01T15:21:00.815Z"
+  },
+  {
+    "id": "dispatch-errortest-1788274079512",
+    "week": "Test Cycle",
+    "calculatedAt": "2026-09-01T14:47:59.512Z",
+    "status": "FAILED",
+    "error": "Simulated backend failure: Timeout waiting for database connection."
+  },
+  {
     "id": "dispatch-errortest-1787911826976",
     "week": "Test Cycle",
     "calculatedAt": "2026-08-28T10:10:26.976Z",

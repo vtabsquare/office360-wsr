@@ -344,7 +344,8 @@ export async function generateWsrPptxDeck(
       createDataRow('Carry Forward', (m) => m.carryForward, COLOR_ROW_BG_1),
       createDataRow('Billable Hours', (m) => m.billableHours, COLOR_ROW_BG_2),
       createDataRow('Non – Billable Hours', (m) => m.nonBillableHours, COLOR_ROW_BG_1),
-      createDataRow('Holidays Availed', (m) => m.holidaysAvailed, COLOR_ROW_BG_2)
+      createDataRow('Holidays Availed', (m) => m.holidaysAvailed, COLOR_ROW_BG_2),
+      createDataRow('Permission Hours', (m) => m.permissionHours || 0, COLOR_ROW_BG_1)
     ];
 
     // Calculate dynamic column widths: first column 2.5 inches, remaining split equally

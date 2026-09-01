@@ -19,7 +19,7 @@ import {
 import confetti from 'canvas-confetti';
 import { TeamWsrData, BotScheduleConfig } from '../types/wsr';
 import { googleSignIn, getAccessToken, auth, logoutGoogle, clearAuthCache, hasValidToken } from '../services/googleAuthService';
-import { sendWsrViaGmail, generateWsrEmailHtml, SendEmailResult } from '../services/gmailService';
+import { sendWsrViaGmail, generateWsrEmailHtml, generateErrorEmailHtml, SendEmailResult } from '../services/gmailService';
 import { calculateDynamicDateRange } from '../utils/dateUtils';
 
 interface BotExecutionModalProps {
@@ -154,11 +154,8 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
       const ccEmails = ccEmailsString.split(',').map((e: string) => e.trim()).filter(Boolean);
 
       if (mode === 'error') {
-        const testRes = await fetch('/api/bot/test-error');
-        if (!testRes.ok) {
-          const errData = await testRes.json();
-          throw new Error(errData.error || 'Simulated error occurred.');
-        }
+        // Just throw to simulate error without network dependency!
+        throw new Error('Simulated Database Timeout: Failed to connect to ofzdvvjkqgnheogwfdnk Supabase project cluster');
       } else {
         const result = await sendWsrViaGmail({
           toEmail: tlEmail,
@@ -185,8 +182,24 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
       });
     } catch (err: any) {
       console.warn('Dispatch note:', err?.message || err);
-      setErrorMsg(err.message || 'Failed to dispatch email via SMTP');
+      const errorMessage = err.message || 'Failed to dispatch email via SMTP';
+      setErrorMsg(errorMessage);
       setIsRunning(false);
+
+      // Send error email automatically
+      try {
+        const managerEmail = import.meta.env.VITE_DEFAULT_MANAGER_EMAIL;
+        const errorHtml = generateErrorEmailHtml(errorMessage, dateRange);
+        await sendWsrViaGmail({
+          toEmail: managerEmail,
+          subject: `⚠️ CRITICAL ALERT: WSR Dispatch Failed - ${dateRange}`,
+          htmlBody: errorHtml,
+          teams: [],
+          attachPptx: false
+        });
+      } catch (mailErr) {
+        console.error('Failed to send error alert email:', mailErr);
+      }
     }
   };
 

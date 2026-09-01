@@ -124,8 +124,12 @@ export const EmailSchedulerModal: React.FC<EmailSchedulerModalProps> = ({
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500"
               >
                 <option value="Monday">Every Monday (Week Start)</option>
-                <option value="Sunday">Every Sunday (Week End)</option>
+                <option value="Tuesday">Every Tuesday</option>
+                <option value="Wednesday">Every Wednesday</option>
+                <option value="Thursday">Every Thursday</option>
                 <option value="Friday">Every Friday (Sprint Wrap)</option>
+                <option value="Saturday">Every Saturday</option>
+                <option value="Sunday">Every Sunday (Week End)</option>
               </select>
             </div>
 

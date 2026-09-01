@@ -19,11 +19,11 @@ export const CsvImportExportModal: React.FC<CsvImportExportModalProps> = ({
   );
 
   const handleExportAll = () => {
-    let csv = 'Team,Name,DisplayName,Total Hours,Productive Hours,Non-Productive Hours,Tasks Completed,Carry Forward,Billable Hours,Non-Billable Hours,Holidays Availed\n';
+    let csv = 'Team,Name,DisplayName,Total Hours,Productive Hours,Non-Productive Hours,Tasks Completed,Carry Forward,Billable Hours,Non-Billable Hours,Holidays Availed,Permission Hours\n';
 
     teams.forEach((t) => {
       t.members.forEach((m) => {
-        csv += `"${t.name}","${m.name}","${m.displayName}",${m.totalHours},${m.productiveHours},${m.nonProductiveHours},${m.tasksCompleted},${m.carryForward},${m.billableHours},${m.nonBillableHours},${m.holidaysAvailed}\n`;
+        csv += `"${t.name}","${m.name}","${m.displayName}",${m.totalHours},${m.productiveHours},${m.nonProductiveHours},${m.tasksCompleted},${m.carryForward},${m.billableHours},${m.nonBillableHours},${m.holidaysAvailed},${m.permissionHours || 0}\n`;
       });
     });
 
@@ -132,7 +132,7 @@ export const CsvImportExportModal: React.FC<CsvImportExportModalProps> = ({
               rows={6}
               value={csvContent}
               onChange={(e) => setCsvContent(e.target.value)}
-              placeholder={`Name,Total Hours,Billable Hours,Non-Billable Hours,Productive Hours,Non-Productive Hours,Holidays Availed\n"Vasanth Kumar",34.81,0.00,34.81,33.68,1.13,0`}
+              placeholder={`Name,Total Hours,Billable Hours,Non-Billable Hours,Productive Hours,Non-Productive Hours,Holidays Availed,Permission Hours\n"Vasanth Kumar",34.81,0.00,34.81,33.68,1.13,0,0`}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-cyan-300/90 focus:border-cyan-500"
             />
           </div>

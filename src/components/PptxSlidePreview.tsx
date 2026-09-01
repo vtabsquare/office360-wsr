@@ -368,7 +368,7 @@ export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
                       </tr>
 
                       {/* 8. Holidays Availed */}
-                      <tr className="bg-[#00838f] text-white">
+                      <tr className="bg-[#00838f] text-white border-b border-cyan-800/40">
                         <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
                           Holidays Availed
                         </td>
@@ -387,6 +387,31 @@ export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
                               />
                             ) : (
                               m.holidaysAvailed
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+
+                      {/* 9. Permission Hours */}
+                      <tr className="bg-[#0097a7] text-white">
+                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
+                          Permission Hours
+                        </td>
+                        {currentTeam.members.map((m) => (
+                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                value={m.permissionHours || 0}
+                                onChange={(e) =>
+                                  onUpdateMember(currentTeam.id, m.id, {
+                                    permissionHours: parseFloat(e.target.value) || 0
+                                  })
+                                }
+                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              />
+                            ) : (
+                              m.permissionHours || 0
                             )}
                           </td>
                         ))}

@@ -67,6 +67,15 @@ export async function fetchLiveWsrData(): Promise<any[]> {
 
   if (tasksError) throw new Error('Error fetching task details: ' + tasksError.message);
 
+  // 5. Fetch permissions data
+  const { data: permissions, error: permError } = await supabase
+    .from('crc6f_permissions')
+    .select('*')
+    .eq('crc6f_status', 'Approved')
+    .gte('crc6f_date', fromDate)
+    .lte('crc6f_date', toDate);
+
+  if (permError) throw new Error('Error fetching permissions: ' + permError.message);
   // Custom Hardcoded Team Mapping by Employee ID
   const TEAM_MAPPING: Record<string, string> = {
     'EMP013': 'Python',
@@ -162,6 +171,18 @@ export async function fetchLiveWsrData(): Promise<any[]> {
     const lastInitial = emp.crc6f_lastname ? ` ${emp.crc6f_lastname.charAt(0)}.` : '';
     const displayName = `${firstName}${lastInitial}`;
 
+    // Calculate permission hours
+    const empPermissions = (permissions || []).filter(p => p.crc6f_employeeid === emp.crc6f_employeeid);
+    let permissionHours = 0;
+    for (const p of empPermissions) {
+       if (p.crc6f_starttime && p.crc6f_endtime) {
+         const start = new Date(`1970-01-01T${p.crc6f_starttime}Z`);
+         const end = new Date(`1970-01-01T${p.crc6f_endtime}Z`);
+         const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+         if (hours > 0) permissionHours += hours;
+       }
+    }
+
     team.members.push({
       id: emp.crc6f_employeeid,
       name: `${emp.crc6f_firstname} ${emp.crc6f_lastname}`,
@@ -175,6 +196,7 @@ export async function fetchLiveWsrData(): Promise<any[]> {
       billableHours,
       nonBillableHours,
       holidaysAvailed: holidaysAvailed,
+      permissionHours: permissionHours,
       role: emp.crc6f_designation || 'Employee'
     });
   }

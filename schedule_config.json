@@ -1,8 +1,8 @@
 {
   "enabled": true,
   "frequency": "weekly",
-  "dayOfWeek": "Friday",
-  "time": "15:39",
+  "dayOfWeek": "Tuesday",
+  "time": "20:50",
   "timezone": "Asia/Kolkata (IST)",
   "managerEmail": "sajathjsfi@gmail.com",
   "ccEmails": [
