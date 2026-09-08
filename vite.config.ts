@@ -11,7 +11,7 @@ dotenv.config();
 dns.setDefaultResultOrder('ipv4first');
 
 import { calculateDynamicDateRange } from './src/utils/dateUtils.js';
-import { initCron, getSchedule, updateSchedule } from './src/services/cronService.js';
+import { getSchedule, updateSchedule } from './src/services/cronService.js';
 
 function apiServerPlugin(): Plugin {
   return {
@@ -543,9 +543,7 @@ function generateLocalWsrAnalysis(teams: any[], dateRange: string) {
 }
 
 export default defineConfig(({ command }) => {
-  if (command === 'serve') {
-    initCron();
-  }
+  // Vite config here
   return {
     plugins: [react(), tailwindcss(), apiServerPlugin()],
     resolve: {

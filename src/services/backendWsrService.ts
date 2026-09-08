@@ -4,6 +4,9 @@ import nodemailer from 'nodemailer';
 import { generateWsrEmailHtml, generateErrorEmailHtml } from './gmailService.js'; // reusing HTML generation
 import { saveDispatchLog, getDispatchLogById, DispatchLog } from './dispatchLogger.js';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -76,6 +79,26 @@ export async function fetchLiveWsrData(): Promise<any[]> {
     .lte('crc6f_date', toDate);
 
   if (permError) throw new Error('Error fetching permissions: ' + permError.message);
+
+  // 6. Fetch attendance data from crc6f_table13s
+  const { data: attendanceLogs, error: attError } = await supabase
+    .from('crc6f_table13s')
+    .select('*')
+    .gte('crc6f_date', fromDate)
+    .lte('crc6f_date', toDate);
+
+  if (attError) throw new Error('Error fetching attendance: ' + attError.message);
+
+  // 7. Fetch employee shift settings
+  const { data: shiftSettingsData, error: shiftError } = await supabase
+    .from('employee_shift_settings')
+    .select('*');
+
+  if (shiftError) {
+    console.warn('[WSR Cron] Warning: Could not fetch employee_shift_settings:', shiftError.message);
+  }
+  const employeeShiftSettings = shiftSettingsData || [];
+
   // Custom Hardcoded Team Mapping by Employee ID
   const TEAM_MAPPING: Record<string, string> = {
     'EMP013': 'Python',
@@ -116,7 +139,17 @@ export async function fetchLiveWsrData(): Promise<any[]> {
       continue; // Skip resigned employees
     }
     
+    // Skip manager
+    if (emp.crc6f_firstname && emp.crc6f_firstname.toLowerCase().includes('balamurali')) {
+      continue;
+    }
+    
     const teamName = TEAM_MAPPING[emp.crc6f_employeeid] || 'Unassigned';
+    
+    // Explicitly remove Unassigned team
+    if (teamName === 'Unassigned') {
+      continue;
+    }
     
     if (!teamsMap.has(teamName)) {
       teamsMap.set(teamName, {
@@ -131,30 +164,33 @@ export async function fetchLiveWsrData(): Promise<any[]> {
 
     const team = teamsMap.get(teamName);
 
-    // Filter timesheets for this employee
+    // Filter timesheets for this employee to calculate tasks done and productive hours
     const empTimesheets = (timesheets || []).filter(ts => ts.crc6f_employeeid === emp.crc6f_employeeid);
-    
-    let totalHours = 0;
     let tasksCompleted = 0;
-    
+    let productiveHours = 0;
     for (const ts of empTimesheets) {
-      totalHours += (ts.crc6f_hoursworked || 0);
+      productiveHours += (ts.crc6f_hoursworked || 0);
       if (ts.crc6f_taskid) tasksCompleted += 1;
+    }
+
+    // Filter attendance to calculate total hours
+    const empAttendance = (attendanceLogs || []).filter(att => att.crc6f_employeeid === emp.crc6f_employeeid);
+    let totalHours = 0;
+    for (const att of empAttendance) {
+      if (att.crc6f_duration) {
+        totalHours += att.crc6f_duration;
+      }
     }
 
     // Calculate holidays availed within the week
     const empLeaves = (leaves || []).filter(l => l.crc6f_employeeid === emp.crc6f_employeeid);
     const holidaysAvailed = empLeaves.reduce((acc, l) => acc + (l.crc6f_totaldays || 0), 0);
-
-    // Calculate productive and non-productive based on 9hr workday
-    const standardWeekDays = 5;
-    const expectedProductiveHours = Math.max(0, (standardWeekDays - holidaysAvailed) * 9);
     
-    const productiveHours = Math.min(totalHours, expectedProductiveHours);
-    const nonProductiveHours = Math.max(0, totalHours - expectedProductiveHours);
+    // Ensure nonProductiveHours doesn't drop below 0 if somehow timesheet hours exceed attendance hours
+    const nonProductiveHours = Math.max(0, totalHours - productiveHours);
 
     const billableHours = empTimesheets.filter(ts => ts.crc6f_billingtype === 'Billable').reduce((acc, ts) => acc + (ts.crc6f_hoursworked || 0), 0);
-    const nonBillableHours = totalHours - billableHours;
+    const nonBillableHours = empTimesheets.filter(ts => ts.crc6f_billingtype === 'Non-billable').reduce((acc, ts) => acc + (ts.crc6f_hoursworked || 0), 0);
 
     // Calculate carry forward tasks
     const empTaskIds = [...new Set(empTimesheets.filter(ts => ts.crc6f_taskid).map(ts => ts.crc6f_taskid))];
@@ -170,19 +206,78 @@ export async function fetchLiveWsrData(): Promise<any[]> {
     const firstName = emp.crc6f_firstname || '';
     const lastInitial = emp.crc6f_lastname ? ` ${emp.crc6f_lastname.charAt(0)}.` : '';
     const displayName = `${firstName}${lastInitial}`;
-
-    // Calculate permission hours
+    
+    // Calculate permission hours and compensation
     const empPermissions = (permissions || []).filter(p => p.crc6f_employeeid === emp.crc6f_employeeid);
-    let permissionHours = 0;
+    let totalPermissionHoursNumeric = 0;
+    let permissionStrings: string[] = [];
+    let hasCompensated = false;
+    let compDate = '';
     for (const p of empPermissions) {
        if (p.crc6f_starttime && p.crc6f_endtime) {
          const start = new Date(`1970-01-01T${p.crc6f_starttime}Z`);
          const end = new Date(`1970-01-01T${p.crc6f_endtime}Z`);
-         const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-         if (hours > 0) permissionHours += hours;
+         let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+         hours = parseFloat(hours.toFixed(2));
+         if (hours > 0) {
+           totalPermissionHoursNumeric += hours;
+           const dateStr = p.crc6f_date || 'Date N/A';
+           permissionStrings.push(`${hours} [${dateStr}]`);
+         }
+       }
+       if (p.crc6f_compensated) {
+         hasCompensated = true;
+         if (p.crc6f_makeupdate) {
+           compDate = p.crc6f_makeupdate;
+         } else if (p.crc6f_compensatedat) {
+           compDate = p.crc6f_compensatedat.split('T')[0];
+         }
        }
     }
+    
+    let permissionCompensated = '-';
+    if (totalPermissionHoursNumeric > 0) {
+      if (hasCompensated) {
+        permissionCompensated = compDate ? `Yes [${compDate}]` : 'Yes';
+      } else {
+        permissionCompensated = 'No';
+      }
+    }
+    const permissionHoursDisplay = permissionStrings.length > 0 ? permissionStrings.join('+') : 0;
+    
+    // Determine shift days (5 or 6) based on employee_shift_settings
+    const empShift = employeeShiftSettings.find(
+      (s: any) => s.employee_id === emp.crc6f_employeeid || 
+                  s.crc6f_employeeid === emp.crc6f_employeeid ||
+                  s.employeeid === emp.crc6f_employeeid ||
+                  s.id === emp.crc6f_employeeid
+    );
+    
+    let shiftDays = 5;
+    if (empShift) {
+      // Check possible column names
+      let shiftVal: any = empShift.shift_days || empShift.crc6f_shiftdays || empShift.working_days || empShift.days || empShift.shift_type || empShift.shift || empShift.shiftdays;
+      
+      // Fallback: search all values in the row for 'mon-sat' or 'mon-fri'
+      if (!shiftVal) {
+        shiftVal = Object.values(empShift).find(v => typeof v === 'string' && (v.toLowerCase().includes('mon-sat') || v.toLowerCase().includes('mon-fri')));
+      }
 
+      if (typeof shiftVal === 'string') {
+        const lowerVal = shiftVal.toLowerCase();
+        if (lowerVal.includes('sat')) {
+          shiftDays = 6;
+        } else if (lowerVal.includes('fri')) {
+          shiftDays = 5;
+        } else {
+          const parsed = Number(shiftVal);
+          if (!isNaN(parsed) && parsed > 0) shiftDays = parsed;
+        }
+      } else if (typeof shiftVal === 'number' && shiftVal > 0) {
+        shiftDays = shiftVal;
+      }
+    }
+    
     team.members.push({
       id: emp.crc6f_employeeid,
       name: `${emp.crc6f_firstname} ${emp.crc6f_lastname}`,
@@ -196,8 +291,10 @@ export async function fetchLiveWsrData(): Promise<any[]> {
       billableHours,
       nonBillableHours,
       holidaysAvailed: holidaysAvailed,
-      permissionHours: permissionHours,
-      role: emp.crc6f_designation || 'Employee'
+      permissionHours: permissionHoursDisplay,
+      permissionCompensated: permissionCompensated,
+      role: emp.crc6f_designation || 'Employee',
+      shiftDays: shiftDays > 0 ? shiftDays : 5
     });
   }
 
@@ -249,6 +346,23 @@ async function dispatchErrorEmail(errorMsg: string, dateRange: string, mailFlow?
  */
 export async function runAutomatedWsrDispatch() {
   console.log('[WSR Cron] Starting automated WSR dispatch pipeline...');
+  
+  // Implement file lock to prevent multiple PM2 instances/workers from firing simultaneously
+  const lockFile = path.join(os.tmpdir(), 'wsr_cron.lock');
+  try {
+    if (fs.existsSync(lockFile)) {
+      const stats = fs.statSync(lockFile);
+      // If lock was created in the last 5 minutes, skip this run
+      if (Date.now() - stats.mtimeMs < 1000 * 60 * 5) {
+        console.log('[WSR Cron] Dispatch already triggered recently by another instance. Skipping.');
+        return;
+      }
+    }
+    fs.writeFileSync(lockFile, Date.now().toString());
+  } catch (e) {
+    console.warn('[WSR Cron] Warning: Failed to acquire or check lock file.', e);
+  }
+
   let dateRange: string;
   let mailFlow: DispatchLog;
 

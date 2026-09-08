@@ -288,7 +288,8 @@ export const PresentationMode: React.FC<PresentationModeProps> = ({
                         const tTasks = t.members.reduce((a, m) => a + m.tasksCompleted, 0);
                         const tCarry = t.members.reduce((a, m) => a + m.carryForward, 0);
                         const tBill = t.members.reduce((a, m) => a + m.billableHours, 0);
-                        const prodRatio = tTotal > 0 ? ((tProd / tTotal) * 100).toFixed(1) : '0';
+                        const tExpected = t.members.reduce((acc, m) => acc + Math.max(0, ((m.shiftDays || 5) - m.holidaysAvailed) * 9), 0);
+                        const prodRatio = tExpected > 0 ? ((tProd / tExpected) * 100).toFixed(1) : '0';
                         const rowBg = idx % 2 === 0 ? 'bg-[#0097a7]' : 'bg-[#00838f]';
 
                         return (

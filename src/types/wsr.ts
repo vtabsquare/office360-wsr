@@ -11,10 +11,12 @@ export interface EmployeeWsrRecord {
   billableHours: number;
   nonBillableHours: number;
   holidaysAvailed: number;
-  permissionHours?: number;
+  permissionHours?: string | number;
+  permissionCompensated?: string;
   notes?: string;
   avatar?: string;
   role?: string;
+  shiftDays?: number;
 }
 
 export interface TeamWsrData {

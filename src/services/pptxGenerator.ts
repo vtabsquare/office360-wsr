@@ -303,7 +303,8 @@ export async function generateWsrPptxDeck(
     const createDataRow = (
       rowLabel: string,
       getValue: (m: typeof team.members[0]) => string | number,
-      bgHex: string = COLOR_ROW_BG_1
+      bgHex: string = COLOR_ROW_BG_1,
+      getColor?: (m: typeof team.members[0]) => string
     ): PptxGenJS.TableCell[] => [
       {
         text: rowLabel,
@@ -326,10 +327,11 @@ export async function generateWsrPptxDeck(
           text: textVal,
           options: {
             fill: { color: bgHex },
-            color: COLOR_TEXT,
+            color: getColor ? getColor(m) : COLOR_TEXT,
             align: 'left' as const,
             fontSize: dataFontSize,
-            fontFace: 'Arial'
+            fontFace: 'Arial',
+            bold: !!getColor
           }
         };
       })
@@ -337,7 +339,18 @@ export async function generateWsrPptxDeck(
 
     const tableRows: PptxGenJS.TableCell[][] = [
       headerRow,
-      createDataRow('Total Hours', (m) => m.totalHours, COLOR_ROW_BG_1),
+      createDataRow('Total Hours', (m) => {
+        const expected = Math.max(0, (m.shiftDays || 5) - m.holidaysAvailed) * 9;
+        return `${m.totalHours.toFixed(2)}(${expected})`;
+      }, COLOR_ROW_BG_1, (m) => {
+        const daysWorked = Math.max(0, (m.shiftDays || 5) - m.holidaysAvailed);
+        const greenLimit = 9 * daysWorked;
+        const orangeLimit = 8.5 * daysWorked;
+        
+        if (m.totalHours >= greenLimit) return '059669'; // Green
+        if (m.totalHours >= orangeLimit) return 'D97706'; // Orange
+        return 'DC2626'; // Red
+      }),
       createDataRow('Productive Hours', (m) => m.productiveHours, COLOR_ROW_BG_2),
       createDataRow('Non – Productive Hours', (m) => m.nonProductiveHours, COLOR_ROW_BG_1),
       createDataRow('Tasks Completed', (m) => m.tasksCompleted, COLOR_ROW_BG_2),
@@ -345,7 +358,8 @@ export async function generateWsrPptxDeck(
       createDataRow('Billable Hours', (m) => m.billableHours, COLOR_ROW_BG_2),
       createDataRow('Non – Billable Hours', (m) => m.nonBillableHours, COLOR_ROW_BG_1),
       createDataRow('Holidays Availed', (m) => m.holidaysAvailed, COLOR_ROW_BG_2),
-      createDataRow('Permission Hours', (m) => m.permissionHours || 0, COLOR_ROW_BG_1)
+      createDataRow('Permission Hours', (m) => m.permissionHours || 0, COLOR_ROW_BG_1),
+      createDataRow('Compensated', (m) => m.permissionCompensated || '-', COLOR_ROW_BG_2)
     ];
 
     // Calculate dynamic column widths: first column 2.5 inches, remaining split equally
@@ -417,7 +431,8 @@ export async function generateWsrPptxDeck(
       const tTasks = t.members.reduce((acc, m) => acc + m.tasksCompleted, 0);
       const tCarry = t.members.reduce((acc, m) => acc + m.carryForward, 0);
       const tBill = t.members.reduce((acc, m) => acc + m.billableHours, 0);
-      const prodPercent = tTotal > 0 ? ((tProd / tTotal) * 100).toFixed(1) + '%' : '0%';
+      const tExpected = t.members.reduce((acc, m) => acc + Math.max(0, ((m.shiftDays || 5) - m.holidaysAvailed) * 9), 0);
+      const prodPercent = tExpected > 0 ? ((tProd / tExpected) * 100).toFixed(1) + '%' : '0%';
       const rowBg = idx % 2 === 0 ? '0097A7' : '008BA3';
 
       return [

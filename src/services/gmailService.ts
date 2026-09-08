@@ -274,7 +274,7 @@ export function generateWsrEmailHtml(
                 ✅ Approve & Send to Manager
               </a>
               <div style="font-size: 12px; color: #64748b; margin-top: 12px;">
-                Clicking this will automatically dispatch the final PPTX deck to <strong>${managerEmail}</strong>.
+                Clicking this will automatically dispatch the final PPTX deck to the Management Team.
               </div>
             </td>
           </tr>
@@ -287,7 +287,7 @@ export function generateWsrEmailHtml(
                 📎 <strong>Attached:</strong> Complete widescreen presentation deck (<code style="background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px;">.pptx</code>) formatted in company Black & Teal design standard.
               </div>
               <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
-                Dispatched automatically by OfficeHub360 WSR Intelligence Engine to ${managerEmail}.
+                Dispatched automatically by OfficeHub360 WSR Intelligence Engine to ${isApprovalRequest ? 'the Team Lead for review' : managerEmail}.
               </div>
             </td>
           </tr>
@@ -313,7 +313,7 @@ export function generateErrorEmailHtml(
     { id: 'wsr-calc', title: 'Compute WSR Team Metrics', desc: 'Aggregating members across teams...' },
     { id: 'ai-analysis', title: 'Run Gemini AI Intelligence', desc: 'Analyzing overtime anomalies, burnout indicators, and generating executive summary...' },
     { id: 'pptx-build', title: 'Compile PPTX Slide Deck', desc: 'Rendering 16:9 widescreen PowerPoint deck with Black & Cyan departmental slides...' },
-    { id: 'email-dispatch', title: `Send via Gmail to ${process.env.VITE_DEFAULT_MANAGER_EMAIL || 'Manager'}`, desc: 'Sending authenticated RFC 2822 email with attached .pptx deck through Gmail API...' }
+    { id: 'email-dispatch', title: 'Send via Gmail to Management', desc: 'Sending authenticated RFC 2822 email with attached .pptx deck through Gmail API...' }
   ];
 
   // Determine which steps are done vs failed

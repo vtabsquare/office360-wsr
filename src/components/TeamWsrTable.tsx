@@ -75,7 +75,8 @@ export const TeamWsrTable: React.FC<TeamWsrTableProps> = ({
   const tasksCompleted = currentTeam.members.reduce((acc, m) => acc + m.tasksCompleted, 0);
   const carryForward = currentTeam.members.reduce((acc, m) => acc + m.carryForward, 0);
   const billableHours = currentTeam.members.reduce((acc, m) => acc + m.billableHours, 0);
-  const prodRatio = totalHours > 0 ? ((productiveHours / totalHours) * 100).toFixed(1) : '0';
+  const expectedHours = currentTeam.members.reduce((acc, m) => acc + Math.max(0, ((m.shiftDays || 5) - m.holidaysAvailed) * 9), 0);
+  const prodRatio = expectedHours > 0 ? ((productiveHours / expectedHours) * 100).toFixed(1) : '0';
 
   const handleCreateMember = (e: React.FormEvent) => {
     e.preventDefault();

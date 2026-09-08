@@ -120,299 +120,286 @@ export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
         </button>
 
         {/* 16:9 Slide Canvas */}
-        <div className="w-full max-w-5xl aspect-[16/9] bg-white rounded-lg shadow-2xl overflow-hidden relative flex flex-col justify-between select-text border border-slate-300">
+        <div className="w-full max-w-5xl aspect-[16/9] bg-white rounded-xl shadow-2xl overflow-hidden relative flex flex-col justify-between select-text border border-slate-200">
           
-          {/* SLIDE 0: Cover Slide */}
+          {/* SLIDE 0: Cover Slide — Dark Navy Theme */}
           {currentSlideIndex === 0 && (
-            <div className="h-full flex flex-col justify-between p-8 sm:p-12 bg-gradient-to-br from-slate-50 via-white to-cyan-50">
-              <div className="h-2 w-full bg-cyan-600 -mt-8 sm:-mt-12 -mx-8 sm:-mx-12 mb-6" />
-              
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-cyan-100 text-cyan-800 font-semibold text-xs tracking-wider uppercase mb-4">
-                  OfficeHub360 • Executive WSR
-                </div>
-                <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                  Weekly Status Report
-                </h1>
-                <p className="text-lg sm:text-xl text-slate-600 mt-2 font-medium">
-                  Team Performance, Timesheets & Task Velocity Deck
-                </p>
-                <div className="w-24 h-1 bg-cyan-600 mt-4" />
-              </div>
+            <div className="h-full flex flex-col" style={{background: 'linear-gradient(160deg, #0d1b2a 0%, #0f2238 55%, #0a1929 100%)'}}>
+              {/* Top accent bar */}
+              <div className="flex-shrink-0" style={{height: '4px', background: 'linear-gradient(90deg, #00c6d7, #0097a7, #006d7a)'}} />
 
-              <div className="grid grid-cols-3 gap-4 my-auto">
-                <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase">Period</div>
-                  <div className="text-lg font-bold text-slate-800 mt-1">{calculateDynamicDateRange()}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Week 33 Report</div>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase">Coverage</div>
-                  <div className="text-lg font-bold text-slate-800 mt-1">
-                    {teams.length} Teams • {teams.reduce((a, t) => a + t.members.length, 0)} Engineers
+              <div className="flex flex-col flex-1 justify-between px-8 sm:px-14 py-6 sm:py-10">
+                {/* Top badge + title block */}
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5" style={{background:'rgba(0,151,167,0.2)', border:'1px solid rgba(0,151,167,0.4)'}}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#00e5ff'}} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{color:'#67d5e3'}}>OfficeHub360 • Executive WSR</span>
                   </div>
-                  <div className="text-xs text-cyan-700 font-medium mt-0.5">
-                    {teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.totalHours, 0), 0).toFixed(1)} Total Hours
-                  </div>
+                  <h1 className="font-black tracking-tight leading-none" style={{color:'#e8f4f8', fontSize:'clamp(1.8rem, 4vw, 3rem)', letterSpacing:'-0.03em'}}>
+                    Weekly Status Report
+                  </h1>
+                  <p className="mt-2 font-medium" style={{color:'#4db6c9', fontSize:'clamp(0.75rem, 1.5vw, 1rem)'}}>
+                    Team Performance, Timesheets &amp; Task Velocity Deck
+                  </p>
+                  <div className="mt-4" style={{width:'48px', height:'3px', background:'linear-gradient(90deg,#00c6d7,#0097a7)', borderRadius:'2px'}} />
                 </div>
-                <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase">Velocity</div>
-                  <div className="text-lg font-bold text-emerald-700 mt-1">
-                    {teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.tasksCompleted, 0), 0)} Tasks Completed
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5">Supabase Synced</div>
-                </div>
-              </div>
 
-              <div className="flex justify-between items-center text-xs text-slate-400 border-t border-slate-200 pt-4">
-                <span>Confidential • Prepared for Engineering Leadership</span>
-                <span>OfficeHub360 WSR Engine</span>
+                {/* KPI metric cards */}
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Period */}
+                  <div className="rounded-xl p-4" style={{background:'rgba(0,151,167,0.12)', border:'1px solid rgba(0,151,167,0.3)'}}>
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:'#4db6c9'}}>Period</div>
+                    <div className="font-bold leading-tight" style={{color:'#cce9f0', fontSize:'clamp(0.65rem, 1.2vw, 0.85rem)'}}>{calculateDynamicDateRange()}</div>
+                    <div className="text-[9px] mt-1" style={{color:'#2d8a99'}}>Current Reporting Cycle</div>
+                  </div>
+                  {/* Coverage */}
+                  <div className="rounded-xl p-4" style={{background:'rgba(0,151,167,0.12)', border:'1px solid rgba(0,151,167,0.3)'}}>
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:'#4db6c9'}}>Coverage</div>
+                    <div className="font-bold leading-tight" style={{color:'#cce9f0', fontSize:'clamp(0.65rem, 1.2vw, 0.85rem)'}}>
+                      {teams.length} Teams • {teams.reduce((a, t) => a + t.members.length, 0)} Engineers
+                    </div>
+                    <div className="text-[9px] mt-1 font-semibold" style={{color:'#00c6d7'}}>
+                      {teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.totalHours, 0), 0).toFixed(1)} Total Hours
+                    </div>
+                  </div>
+                  {/* Velocity */}
+                  <div className="rounded-xl p-4" style={{background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.3)'}}>
+                    <div className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{color:'#34d399'}}>Velocity</div>
+                    <div className="font-bold leading-tight" style={{color:'#a7f3d0', fontSize:'clamp(0.65rem, 1.2vw, 0.85rem)'}}>
+                      {teams.reduce((a, t) => a + t.members.reduce((b, m) => b + m.tasksCompleted, 0), 0)} Tasks Completed
+                    </div>
+                    <div className="text-[9px] mt-1" style={{color:'#059669'}}>Supabase Live Sync</div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-between items-center" style={{borderTop:'1px solid rgba(0,151,167,0.2)', paddingTop:'10px'}}>
+                  <span className="text-[9px] font-semibold" style={{color:'#2d8a99'}}>Confidential • Prepared for Engineering Leadership</span>
+                  <span className="text-[9px]" style={{color:'#2d8a99'}}>OfficeHub360 WSR Engine</span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* SLIDES 1..N: Individual Team Slides matching images */}
+          {/* SLIDES 1..N: Individual Team Slides — Redesigned Professional Dark Theme */}
           {currentTeam && (
-            <div className="h-full flex flex-col justify-between p-6 sm:p-10 bg-white">
-              <div>
-                {/* Header matching exact uploaded image: Left Title, Right Date */}
-                <div className="flex items-baseline justify-between">
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                    WSR – {currentTeam.name}
-                  </h2>
-                  <span className="text-xl sm:text-2xl font-bold text-slate-950 font-sans">
-                    {currentTeam.dateRange}
+            <div className="h-full flex flex-col" style={{background: 'linear-gradient(160deg, #0d1b2a 0%, #0f2238 55%, #0a1929 100%)'}}>
+              {/* Top accent bar */}
+              <div className="flex-shrink-0" style={{height: '4px', background: 'linear-gradient(90deg, #00c6d7, #0097a7, #006d7a)'}} />
+
+              <div className="flex flex-col flex-1 px-6 sm:px-9 py-4 sm:py-5">
+                {/* Slide Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-1 h-5 rounded-full" style={{background:'linear-gradient(180deg,#00e5ff,#0097a7)'}} />
+                      <h2 className="text-lg sm:text-xl font-black tracking-tight" style={{color:'#e8f4f8', letterSpacing:'-0.02em'}}>
+                        WSR – {currentTeam.name}
+                      </h2>
+                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest ml-3" style={{color:'#4db6c9'}}>
+                      Weekly Status Report • Confidential
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm sm:text-base font-bold" style={{color:'#cce9f0'}}>{currentTeam.dateRange}</div>
+                    <div className="flex items-center justify-end gap-3 mt-1">
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{background:'rgba(0,151,167,0.25)', color:'#67d5e3', border:'1px solid rgba(0,151,167,0.4)'}}>
+                        ● LIVE DATA
+                      </span>
+                      <span className="text-[9px]" style={{color:'#4db6c9'}}>{currentTeam.members.length} Members</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center gap-3 mb-2.5">
+                  <span className="text-[9px] font-bold uppercase tracking-wider" style={{color:'#4db6c9'}}>Status Key:</span>
+                  <span className="flex items-center gap-1 text-[9px] font-semibold" style={{color:'#10b981'}}>
+                    <span className="w-2 h-2 rounded-full inline-block" style={{background:'#10b981'}} /> On Track
+                  </span>
+                  <span className="flex items-center gap-1 text-[9px] font-semibold" style={{color:'#f59e0b'}}>
+                    <span className="w-2 h-2 rounded-full inline-block" style={{background:'#f59e0b'}} /> Near Target
+                  </span>
+                  <span className="flex items-center gap-1 text-[9px] font-semibold" style={{color:'#f87171'}}>
+                    <span className="w-2 h-2 rounded-full inline-block" style={{background:'#f87171'}} /> Below Target
                   </span>
                 </div>
 
-                {/* Accent Divider Line */}
-                <div className="w-full h-1 bg-cyan-700 mt-2 mb-6" />
-
-                {/* The Exact Table Layout from Uploaded PPT Images */}
-                <div className="w-full overflow-x-auto rounded-none border border-cyan-900/40">
-                  <table className="w-full border-collapse text-left text-xs sm:text-sm font-sans">
+                {/* Table */}
+                <div className="flex-1 overflow-hidden rounded-lg" style={{border:'1px solid rgba(0,151,167,0.3)'}}>
+                  <table className="w-full border-collapse text-xs font-sans" style={{tableLayout:'fixed'}}>
                     <thead>
-                      <tr className="bg-black text-white">
-                        <th className="py-1.5 px-3 font-bold border-r border-slate-800 w-44 sm:w-52">
-                          Name
+                      <tr style={{background:'linear-gradient(90deg,#0c2233,#0d2a3e)'}}>
+                        <th className="py-2 px-2.5 text-left font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', width:'30%', fontSize:'11px', letterSpacing:'0.03em'}}>
+                          METRIC
                         </th>
                         {currentTeam.members.map((member) => (
-                          <th
-                            key={member.id}
-                            className="py-1.5 px-3 font-bold border-r border-slate-800 last:border-r-0"
-                          >
+                          <th key={member.id} className="py-2 px-2 text-left font-bold" style={{color:'#e0f5f9', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px', letterSpacing:'0.02em'}}>
                             {member.displayName || member.name.split(' ')[0]}
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {/* 1. Total Hours */}
-                      <tr className="bg-[#0097a7] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
+                      {/* 1. Total Hours — prominent status row */}
+                      <tr style={{background:'linear-gradient(90deg, rgba(0,151,167,0.35), rgba(0,151,167,0.2))', borderBottom:'1px solid rgba(0,151,167,0.35)'}}>
+                        <td className="py-1.5 px-2.5 font-bold" style={{color:'#a5e4ef', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px', letterSpacing:'0.02em'}}>
                           Total Hours
                         </td>
-                        {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={m.totalHours}
-                                onChange={(e) => {
-                                  const total = parseFloat(e.target.value) || 0;
-                                  const nonProd = Math.max(0, +(total - m.productiveHours).toFixed(2));
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    totalHours: total,
-                                    nonProductiveHours: nonProd
-                                  });
-                                }}
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
-                              />
-                            ) : (
-                              m.totalHours.toFixed(2)
-                            )}
-                          </td>
-                        ))}
+                        {currentTeam.members.map((m) => {
+                          const daysWorked = Math.max(0, (m.shiftDays || 5) - m.holidaysAvailed);
+                          const expected = daysWorked * 9;
+                          const greenLimit = 9 * daysWorked;
+                          const orangeLimit = 8.5 * daysWorked;
+                          let badgeBg: string, badgeText: string, badgeBorder: string, dotColor: string;
+                          if (m.totalHours >= greenLimit) {
+                            badgeBg = 'rgba(16,185,129,0.18)'; badgeText = '#34d399'; badgeBorder = 'rgba(16,185,129,0.5)'; dotColor = '#10b981';
+                          } else if (m.totalHours >= orangeLimit) {
+                            badgeBg = 'rgba(245,158,11,0.18)'; badgeText = '#fbbf24'; badgeBorder = 'rgba(245,158,11,0.5)'; dotColor = '#f59e0b';
+                          } else {
+                            badgeBg = 'rgba(239,68,68,0.18)'; badgeText = '#f87171'; badgeBorder = 'rgba(239,68,68,0.5)'; dotColor = '#ef4444';
+                          }
+                          return (
+                            <td key={m.id} className="py-1.5 px-2" style={{borderRight:'1px solid rgba(0,151,167,0.2)'}}>
+                              {isEditing ? (
+                                <input type="number" step="0.01" value={m.totalHours}
+                                  onChange={(e) => {
+                                    const total = parseFloat(e.target.value) || 0;
+                                    onUpdateMember(currentTeam.id, m.id, { totalHours: total, nonProductiveHours: Math.max(0, +(total - m.productiveHours).toFixed(2)) });
+                                  }}
+                                  className="w-16 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)', color:'white', borderColor:'rgba(0,151,167,0.6)'}}
+                                />
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px]" style={{background: badgeBg, color: badgeText, border:`1px solid ${badgeBorder}`}}>
+                                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background: dotColor}} />
+                                  {m.totalHours.toFixed(2)} <span style={{opacity:0.7}}>({expected})</span>
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
                       </tr>
 
                       {/* 2. Productive Hours */}
-                      <tr className="bg-[#00838f] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Productive Hours
-                        </td>
+                      <tr style={{background:'rgba(255,255,255,0.03)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Productive Hours</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {isEditing ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={m.productiveHours}
-                                onChange={(e) => {
-                                  const prod = parseFloat(e.target.value) || 0;
-                                  const nonProd = Math.max(0, +(m.totalHours - prod).toFixed(2));
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    productiveHours: prod,
-                                    nonProductiveHours: nonProd
-                                  });
-                                }}
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              <input type="number" step="0.01" value={m.productiveHours}
+                                onChange={(e) => { const prod = parseFloat(e.target.value)||0; onUpdateMember(currentTeam.id,m.id,{productiveHours:prod,nonProductiveHours:Math.max(0,+(m.totalHours-prod).toFixed(2))}); }}
+                                className="w-16 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
                               />
-                            ) : (
-                              m.productiveHours.toFixed(2)
-                            )}
+                            ) : m.productiveHours.toFixed(2)}
                           </td>
                         ))}
                       </tr>
 
-                      {/* 3. Non – Productive Hours */}
-                      <tr className="bg-[#0097a7] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Non – Productive Hours
-                        </td>
+                      {/* 3. Non-Productive Hours */}
+                      <tr style={{background:'rgba(0,151,167,0.08)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Non – Productive Hours</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
-                            {m.nonProductiveHours.toFixed(2)}
-                          </td>
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{m.nonProductiveHours.toFixed(2)}</td>
                         ))}
                       </tr>
 
                       {/* 4. Tasks Completed */}
-                      <tr className="bg-[#00838f] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Tasks Completed
-                        </td>
+                      <tr style={{background:'rgba(255,255,255,0.03)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Tasks Completed</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-bold" style={{color:'#67d5e3', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {isEditing ? (
-                              <input
-                                type="number"
-                                value={m.tasksCompleted}
-                                onChange={(e) =>
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    tasksCompleted: parseInt(e.target.value) || 0
-                                  })
-                                }
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              <input type="number" value={m.tasksCompleted}
+                                onChange={(e) => onUpdateMember(currentTeam.id,m.id,{tasksCompleted:parseInt(e.target.value)||0})}
+                                className="w-16 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
                               />
-                            ) : (
-                              m.tasksCompleted
-                            )}
+                            ) : m.tasksCompleted}
                           </td>
                         ))}
                       </tr>
 
                       {/* 5. Carry Forward */}
-                      <tr className="bg-[#0097a7] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Carry Forward
-                        </td>
+                      <tr style={{background:'rgba(0,151,167,0.08)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Carry Forward</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color: m.carryForward > 0 ? '#fbbf24' : '#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {isEditing ? (
-                              <input
-                                type="number"
-                                value={m.carryForward}
-                                onChange={(e) =>
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    carryForward: parseInt(e.target.value) || 0
-                                  })
-                                }
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              <input type="number" value={m.carryForward}
+                                onChange={(e) => onUpdateMember(currentTeam.id,m.id,{carryForward:parseInt(e.target.value)||0})}
+                                className="w-16 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
                               />
-                            ) : (
-                              m.carryForward
-                            )}
+                            ) : m.carryForward}
                           </td>
                         ))}
                       </tr>
 
                       {/* 6. Billable Hours */}
-                      <tr className="bg-[#00838f] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Billable Hours
-                        </td>
+                      <tr style={{background:'rgba(255,255,255,0.03)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Billable Hours</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {isEditing ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={m.billableHours}
-                                onChange={(e) => {
-                                  const billable = parseFloat(e.target.value) || 0;
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    billableHours: billable,
-                                    nonBillableHours: Math.max(0, +(m.totalHours - billable).toFixed(2))
-                                  });
-                                }}
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              <input type="number" step="0.01" value={m.billableHours}
+                                onChange={(e) => { const b=parseFloat(e.target.value)||0; onUpdateMember(currentTeam.id,m.id,{billableHours:b,nonBillableHours:Math.max(0,+(m.totalHours-b).toFixed(2))}); }}
+                                className="w-16 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
                               />
-                            ) : (
-                              m.billableHours > 0 ? m.billableHours.toFixed(2) : '0'
-                            )}
+                            ) : (m.billableHours > 0 ? m.billableHours.toFixed(2) : '0')}
                           </td>
                         ))}
                       </tr>
 
-                      {/* 7. Non – Billable Hours */}
-                      <tr className="bg-[#0097a7] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Non – Billable Hours
-                        </td>
+                      {/* 7. Non-Billable Hours */}
+                      <tr style={{background:'rgba(0,151,167,0.08)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Non – Billable Hours</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {m.nonBillableHours > 0 ? m.nonBillableHours.toFixed(2) : '0'}
                           </td>
                         ))}
                       </tr>
 
                       {/* 8. Holidays Availed */}
-                      <tr className="bg-[#00838f] text-white border-b border-cyan-800/40">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Holidays Availed
-                        </td>
+                      <tr style={{background:'rgba(255,255,255,0.03)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Holidays Availed</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {isEditing ? (
-                              <input
-                                type="number"
-                                value={m.holidaysAvailed}
-                                onChange={(e) =>
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    holidaysAvailed: parseInt(e.target.value) || 0
-                                  })
-                                }
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              <input type="number" value={m.holidaysAvailed}
+                                onChange={(e) => onUpdateMember(currentTeam.id,m.id,{holidaysAvailed:parseInt(e.target.value)||0})}
+                                className="w-16 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
                               />
-                            ) : (
-                              m.holidaysAvailed
-                            )}
+                            ) : m.holidaysAvailed}
                           </td>
                         ))}
                       </tr>
 
                       {/* 9. Permission Hours */}
-                      <tr className="bg-[#0097a7] text-white">
-                        <td className="py-1 px-3 font-semibold border-r border-cyan-800/40">
-                          Permission Hours
-                        </td>
+                      <tr style={{background:'rgba(0,151,167,0.08)', borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Permission Hours</td>
                         {currentTeam.members.map((m) => (
-                          <td key={m.id} className="py-1 px-3 border-r border-cyan-800/40 last:border-r-0 font-medium">
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
                             {isEditing ? (
-                              <input
-                                type="number"
-                                value={m.permissionHours || 0}
-                                onChange={(e) =>
-                                  onUpdateMember(currentTeam.id, m.id, {
-                                    permissionHours: parseFloat(e.target.value) || 0
-                                  })
-                                }
-                                className="w-16 px-1.5 py-0.5 bg-cyan-950/70 text-white rounded text-xs border border-cyan-300"
+                              <input type="text" value={m.permissionHours || '0'}
+                                onChange={(e) => onUpdateMember(currentTeam.id,m.id,{permissionHours: e.target.value || '0'})}
+                                className="w-20 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
                               />
-                            ) : (
-                              m.permissionHours || 0
-                            )}
+                            ) : (m.permissionHours || 0)}
+                          </td>
+                        ))}
+                      </tr>
+
+                      {/* 10. Compensated */}
+                      <tr style={{background:'rgba(255,255,255,0.03)'}}>
+                        <td className="py-1.5 px-2.5 font-semibold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>Compensated</td>
+                        {currentTeam.members.map((m) => (
+                          <td key={m.id} className="py-1.5 px-2 font-medium" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>
+                            {isEditing ? (
+                              <input type="text" value={m.permissionCompensated || '-'}
+                                onChange={(e) => onUpdateMember(currentTeam.id,m.id,{permissionCompensated: e.target.value})}
+                                className="w-20 px-1.5 py-0.5 rounded text-xs border" style={{background:'rgba(0,151,167,0.25)',color:'white',borderColor:'rgba(0,151,167,0.6)'}}
+                              />
+                            ) : (m.permissionCompensated || '-')}
                           </td>
                         ))}
                       </tr>
@@ -421,63 +408,80 @@ export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
                 </div>
               </div>
 
-              {/* Bottom slide footer */}
-              <div className="flex justify-between items-center text-[10px] text-slate-400 mt-4 border-t border-slate-100 pt-2">
-                <span>OfficeHub360 WSR Deck • {currentTeam.name}</span>
-                <span>Confidential</span>
+              {/* Bottom footer bar */}
+              <div className="flex-shrink-0 flex justify-between items-center px-6 sm:px-9 py-2" style={{borderTop:'1px solid rgba(0,151,167,0.2)', background:'rgba(0,0,0,0.2)'}}>
+                <span className="text-[9px] font-semibold" style={{color:'#4db6c9'}}>OfficeHub360 WSR Deck • {currentTeam.name}</span>
+                <span className="text-[9px]" style={{color:'#2d8a99'}}>Confidential</span>
               </div>
             </div>
           )}
 
-          {/* FINAL SLIDE: Aggregate Summary & Comparison */}
+          {/* FINAL SLIDE: Aggregate Summary — Dark Navy Theme */}
           {currentSlideIndex === totalSlides - 1 && (
-            <div className="h-full flex flex-col justify-between p-6 sm:p-10 bg-white">
-              <div>
-                <div className="flex items-baseline justify-between">
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-                    WSR – Executive Summary & KPIs
-                  </h2>
-                  <span className="text-xl sm:text-2xl font-bold text-slate-950 font-sans">
-                    Cross-Team Overview
-                  </span>
-                </div>
-                <div className="w-full h-1 bg-cyan-700 mt-2 mb-6" />
+            <div className="h-full flex flex-col" style={{background: 'linear-gradient(160deg, #0d1b2a 0%, #0f2238 55%, #0a1929 100%)'}}>
+              {/* Top accent bar */}
+              <div className="flex-shrink-0" style={{height: '4px', background: 'linear-gradient(90deg, #00c6d7, #0097a7, #006d7a)'}} />
 
-                {/* Team Summary Table */}
-                <div className="w-full overflow-x-auto border border-cyan-900/40">
-                  <table className="w-full border-collapse text-left text-xs sm:text-sm font-sans">
+              <div className="flex flex-col flex-1 px-6 sm:px-9 py-4 sm:py-5">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-1 h-5 rounded-full" style={{background:'linear-gradient(180deg,#00e5ff,#0097a7)'}} />
+                      <h2 className="text-lg sm:text-xl font-black tracking-tight" style={{color:'#e8f4f8', letterSpacing:'-0.02em'}}>
+                        WSR – Executive Summary &amp; KPIs
+                      </h2>
+                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest ml-3" style={{color:'#4db6c9'}}>
+                      Cross-Team Performance Overview
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{background:'rgba(0,151,167,0.25)', color:'#67d5e3', border:'1px solid rgba(0,151,167,0.4)'}}>
+                      ● ALL TEAMS
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary table */}
+                <div className="flex-1 overflow-hidden rounded-lg" style={{border:'1px solid rgba(0,151,167,0.3)'}}>
+                  <table className="w-full border-collapse text-xs font-sans">
                     <thead>
-                      <tr className="bg-black text-white">
-                        <th className="py-2.5 px-3 font-bold">Team Name</th>
-                        <th className="py-2.5 px-3 font-bold text-center">Engineers</th>
-                        <th className="py-2.5 px-3 font-bold text-right">Total Hours</th>
-                        <th className="py-2.5 px-3 font-bold text-right">Productive Hrs</th>
-                        <th className="py-2.5 px-3 font-bold text-center">Productivity %</th>
-                        <th className="py-2.5 px-3 font-bold text-center">Tasks Done</th>
-                        <th className="py-2.5 px-3 font-bold text-center">Carry Fwd</th>
-                        <th className="py-2.5 px-3 font-bold text-right">Billable Hrs</th>
+                      <tr style={{background:'linear-gradient(90deg,#0c2233,#0d2a3e)'}}>
+                        <th className="py-2 px-3 text-left font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px', letterSpacing:'0.03em'}}>TEAM</th>
+                        <th className="py-2 px-2 text-center font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px'}}>ENG</th>
+                        <th className="py-2 px-2 text-right font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px'}}>Total Hrs</th>
+                        <th className="py-2 px-2 text-right font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px'}}>Prod Hrs</th>
+                        <th className="py-2 px-2 text-center font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px'}}>Prod %</th>
+                        <th className="py-2 px-2 text-center font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px'}}>Tasks</th>
+                        <th className="py-2 px-2 text-center font-bold" style={{color:'#7dd3e0', borderRight:'1px solid rgba(0,151,167,0.25)', fontSize:'10px'}}>Carry</th>
+                        <th className="py-2 px-2 text-right font-bold" style={{color:'#7dd3e0', fontSize:'10px'}}>Billable</th>
                       </tr>
                     </thead>
                     <tbody>
                       {teams.map((t, idx) => {
                         const tTotal = t.members.reduce((a, m) => a + m.totalHours, 0);
-                        const tProd = t.members.reduce((a, m) => a + m.productiveHours, 0);
+                        const tProd  = t.members.reduce((a, m) => a + m.productiveHours, 0);
                         const tTasks = t.members.reduce((a, m) => a + m.tasksCompleted, 0);
                         const tCarry = t.members.reduce((a, m) => a + m.carryForward, 0);
-                        const tBill = t.members.reduce((a, m) => a + m.billableHours, 0);
-                        const prodRatio = tTotal > 0 ? ((tProd / tTotal) * 100).toFixed(1) : '0';
-                        const rowBg = idx % 2 === 0 ? 'bg-[#0097a7]' : 'bg-[#00838f]';
-
+                        const tBill  = t.members.reduce((a, m) => a + m.billableHours, 0);
+                        const tExp   = t.members.reduce((acc, m) => acc + Math.max(0, ((m.shiftDays || 5) - m.holidaysAvailed) * 9), 0);
+                        const ratio  = tExp > 0 ? ((tProd / tExp) * 100).toFixed(1) : '0';
+                        const ratioNum = parseFloat(ratio);
+                        let ratioColor = '#34d399';
+                        if (ratioNum < 80) ratioColor = '#f87171';
+                        else if (ratioNum < 95) ratioColor = '#fbbf24';
+                        const rowBg = idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(0,151,167,0.08)';
                         return (
-                          <tr key={t.id} className={`${rowBg} text-white border-b border-cyan-800/40 font-medium`}>
-                            <td className="py-2.5 px-3 font-bold">{t.name}</td>
-                            <td className="py-2.5 px-3 text-center">{t.members.length}</td>
-                            <td className="py-2.5 px-3 text-right">{tTotal.toFixed(2)}</td>
-                            <td className="py-2.5 px-3 text-right">{tProd.toFixed(2)}</td>
-                            <td className="py-2.5 px-3 text-center font-bold">{prodRatio}%</td>
-                            <td className="py-2.5 px-3 text-center font-bold">{tTasks}</td>
-                            <td className="py-2.5 px-3 text-center">{tCarry}</td>
-                            <td className="py-2.5 px-3 text-right">{tBill.toFixed(2)}</td>
+                          <tr key={t.id} style={{background: rowBg, borderBottom:'1px solid rgba(0,151,167,0.15)'}}>
+                            <td className="py-2 px-3 font-bold" style={{color:'#a5e4ef', borderRight:'1px solid rgba(0,151,167,0.2)', fontSize:'10px'}}>{t.name}</td>
+                            <td className="py-2 px-2 text-center" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{t.members.length}</td>
+                            <td className="py-2 px-2 text-right" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{tTotal.toFixed(2)}</td>
+                            <td className="py-2 px-2 text-right" style={{color:'#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{tProd.toFixed(2)}</td>
+                            <td className="py-2 px-2 text-center font-bold" style={{color: ratioColor, borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{ratio}%</td>
+                            <td className="py-2 px-2 text-center font-bold" style={{color:'#67d5e3', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{tTasks}</td>
+                            <td className="py-2 px-2 text-center" style={{color: tCarry > 0 ? '#fbbf24' : '#d4eef5', borderRight:'1px solid rgba(0,151,167,0.15)', fontSize:'10px'}}>{tCarry}</td>
+                            <td className="py-2 px-2 text-right" style={{color:'#d4eef5', fontSize:'10px'}}>{tBill.toFixed(2)}</td>
                           </tr>
                         );
                       })}
@@ -486,9 +490,10 @@ export const PptxSlidePreview: React.FC<PptxSlidePreviewProps> = ({
                 </div>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] text-slate-400 mt-4 border-t border-slate-100 pt-2">
-                <span>Executive Summary • OfficeHub360</span>
-                <span>Generated by AI WSR Bot</span>
+              {/* Footer */}
+              <div className="flex-shrink-0 flex justify-between items-center px-6 sm:px-9 py-2" style={{borderTop:'1px solid rgba(0,151,167,0.2)', background:'rgba(0,0,0,0.2)'}}>
+                <span className="text-[9px] font-semibold" style={{color:'#4db6c9'}}>Executive Summary • OfficeHub360</span>
+                <span className="text-[9px]" style={{color:'#2d8a99'}}>Generated by AI WSR Bot</span>
               </div>
             </div>
           )}

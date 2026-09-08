@@ -40,13 +40,10 @@ app.post('/api/bot/schedule', (req, res) => {
 });
 
 // Manual trigger endpoint for testing the cron job
-app.get('/api/bot/test-cron', async (req, res) => {
-  try {
-    const result = await runAutomatedWsrDispatch();
-    res.json({ success: true, message: 'Cron job executed successfully', result });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+app.get('/api/bot/test-cron', (req, res) => {
+  // Run asynchronously to prevent Cloud Scheduler from timing out and retrying
+  runAutomatedWsrDispatch().catch(err => console.error('[WSR Cron] Test-cron failed:', err));
+  res.json({ success: true, message: 'Cron job started in background' });
 });
 
 // Endpoint to fetch live Supabase data for the frontend UI

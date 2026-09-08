@@ -116,6 +116,18 @@ export default function App() {
       // Automatically update legacy names if present
       return parsed.map((t) => {
         let updatedTeam = t.name === 'Mobile & Cloud Engineering Team' ? { ...t, name: 'Admin Team' } : t;
+        
+        // Automatically set shiftDays based on displayName for existing cached data
+        updatedTeam = {
+          ...updatedTeam,
+          members: updatedTeam.members.map((m) => {
+            let newM = { ...m };
+            if (newM.displayName?.includes('6 days')) newM.shiftDays = 6;
+            else if (newM.displayName?.includes('5 days')) newM.shiftDays = 5;
+            return newM;
+          })
+        };
+
         if (updatedTeam.id === 'team-python') {
           updatedTeam = {
             ...updatedTeam,

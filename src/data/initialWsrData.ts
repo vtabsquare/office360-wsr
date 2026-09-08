@@ -67,7 +67,8 @@ export const INITIAL_TEAMS_DATA: TeamWsrData[] = [
         billableHours: 0.00,
         nonBillableHours: 38.02,
         holidaysAvailed: 1,
-        role: 'Data Pipeline Engineer'
+        role: 'Data Pipeline Engineer',
+        shiftDays: 6
       },
       {
         id: 'emp-vasanth',

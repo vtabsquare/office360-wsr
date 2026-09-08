@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CONFIG_PATH = path.join(__dirname, '..', '..', 'schedule_config.json');
 
-let scheduledTask: cron.ScheduledTask | null = null;
+let scheduledTask: any = null;
 
 const dayMap: Record<string, string> = {
   'Sunday': '0',
