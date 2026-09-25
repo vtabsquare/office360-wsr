@@ -21,4 +21,9 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run build
+      - name: Build with non-production placeholder configuration
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+          GEMINI_API_KEY: ci-placeholder-key
+        run: npm run build
