@@ -1,9 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig, Plugin } from 'vite';
-import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
+import { defineConfig as defineViteConfig, Plugin } from 'vite';
+import { defineConfig as defineVitestConfig, mergeConfig } from 'vitest/config';
+import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import dns from 'dns';
 
@@ -542,9 +543,8 @@ function generateLocalWsrAnalysis(teams: any[], dateRange: string) {
   };
 }
 
-export default defineConfig(({ command }) => {
-  // Vite config here
-  return {
+export default defineViteConfig(({ command, mode, isSsrBuild, isPreview }) => {
+  const viteConfig = {
     plugins: [react(), tailwindcss(), apiServerPlugin()],
     resolve: {
       alias: {
@@ -558,4 +558,12 @@ export default defineConfig(({ command }) => {
       },
     },
   };
+
+  return mergeConfig(viteConfig, defineVitestConfig({
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['./vitest.setup.ts']
+    }
+  }));
 });

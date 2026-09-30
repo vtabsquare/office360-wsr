@@ -1,12 +1,12 @@
 {
   "enabled": true,
   "frequency": "weekly",
-  "dayOfWeek": "Tuesday",
-  "time": "20:51",
+  "dayOfWeek": "Monday",
+  "time": "08:30",
   "timezone": "Asia/Kolkata (IST)",
-  "managerEmail": "sajathjsfi@gmail.com",
+  "managerEmail": "suhaifakt01@gmail.com",
   "ccEmails": [
-    "sohib.vtab@gmail.com"
+    "meenakumarik.vtab@gmail.com"
   ],
   "includePptxAttachment": true,
   "includeAiSummary": true,

@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
+import { AdminLogin } from './components/AdminLogin';
 import { PptxSlidePreview } from './components/PptxSlidePreview';
 import { TeamWsrTable } from './components/TeamWsrTable';
 import { PresentationMode } from './components/PresentationMode';
@@ -106,6 +107,34 @@ function generateClientWsrAnalysis(teams: TeamWsrData[], dateRange: string): AiI
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const isAuth = sessionStorage.getItem('officehub360_is_admin_authenticated') === 'true';
+    const expiry = sessionStorage.getItem('officehub360_admin_session_expiry');
+    if (isAuth && expiry && Date.now() < parseInt(expiry, 10)) {
+      return true;
+    }
+    if (isAuth) {
+      sessionStorage.removeItem('officehub360_is_admin_authenticated');
+      sessionStorage.removeItem('officehub360_admin_session_expiry');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const interval = setInterval(() => {
+      const expiry = sessionStorage.getItem('officehub360_admin_session_expiry');
+      if (!expiry || Date.now() >= parseInt(expiry, 10)) {
+        sessionStorage.removeItem('officehub360_is_admin_authenticated');
+        sessionStorage.removeItem('officehub360_admin_session_expiry');
+        setIsAuthenticated(false);
+      }
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const dynamicDateRange = calculateDynamicDateRange();
   
   const [teams, setTeams] = useState<TeamWsrData[]>(() => {
@@ -435,6 +464,16 @@ export default function App() {
       ? ((totalProductiveHours / totalHoursLogged) * 100).toFixed(1)
       : '0';
 
+  const handleLogout = () => {
+    sessionStorage.removeItem('officehub360_is_admin_authenticated');
+    sessionStorage.removeItem('officehub360_admin_session_expiry');
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#09090b] text-[#fafafa] flex flex-col font-sans selection:bg-[#3b82f6] selection:text-white">
       {/* Top Navigation */}
@@ -450,6 +489,7 @@ export default function App() {
         onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
         onOpenScheduleModal={() => setIsScheduleModalOpen(true)}
         isDownloadingPptx={isDownloadingPptx}
+        onLogout={handleLogout}
       />
 
       {/* Bento Grid Hero / Overview Dashboard */}

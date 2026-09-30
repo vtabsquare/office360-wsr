@@ -13,7 +13,8 @@ import {
   Mail,
   UserCheck,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { SupabaseConfig, BotScheduleConfig } from '../types/wsr';
 import { auth, googleSignIn, logoutGoogle } from '../services/googleAuthService';
@@ -31,6 +32,7 @@ interface NavbarProps {
   onOpenSupabaseModal: () => void;
   onOpenScheduleModal: () => void;
   isDownloadingPptx?: boolean;
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -44,7 +46,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenChat,
   onOpenSupabaseModal,
   onOpenScheduleModal,
-  isDownloadingPptx = false
+  isDownloadingPptx = false,
+  onLogout
 }) => {
   const [googleUser, setGoogleUser] = useState<User | null>(auth.currentUser);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -214,6 +217,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Presentation className="w-3.5 h-3.5 text-amber-400" />
                 <span>Present</span>
+              </button>
+              <button
+                onClick={() => {
+                  onLogout();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center justify-center gap-2 p-2 rounded-xl bg-[#18181b] border border-[#27272a] text-xs text-red-400 hover:bg-red-950/30 hover:border-red-900/50 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Logout</span>
               </button>
             </div>
           </div>

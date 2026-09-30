@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Download, FileSpreadsheet, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { TeamWsrData } from '../types/wsr';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface CsvImportExportModalProps {
   teams: TeamWsrData[];
@@ -65,9 +66,17 @@ export const CsvImportExportModal: React.FC<CsvImportExportModalProps> = ({
     }
   };
 
+  const focusTrapRef = useFocusTrap(true);
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6">
+      <div 
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="csv-modal-title"
+        className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6"
+      >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-5">
           <div className="flex items-center gap-3">
@@ -75,7 +84,7 @@ export const CsvImportExportModal: React.FC<CsvImportExportModalProps> = ({
               <FileSpreadsheet className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">CSV Timesheet Import & Export</h2>
+              <h2 id="csv-modal-title" className="text-xl font-bold text-white">CSV Timesheet Import & Export</h2>
               <p className="text-xs text-slate-400">
                 Bulk import employee records from OfficeHub360 or export current WSR metrics
               </p>

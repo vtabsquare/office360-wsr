@@ -12,10 +12,10 @@ import {
   Table
 } from 'lucide-react';
 import { SupabaseConfig } from '../types/wsr';
-import {
   testSupabaseConnection,
   SUPABASE_SQL_SCHEMA_SCRIPT
 } from '../services/supabaseClient';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SupabaseConnectorModalProps {
   config: SupabaseConfig;
@@ -60,9 +60,17 @@ export const SupabaseConnectorModal: React.FC<SupabaseConnectorModalProps> = ({
     setTimeout(() => setCopiedSql(false), 2000);
   };
 
+  const focusTrapRef = useFocusTrap(true);
+
   return (
     <div className="fixed inset-0 z-50 bg-[#09090b]/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden">
-      <div className="bg-[#18181b] border border-[#27272a] rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div 
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="supabase-connector-title"
+        className="bg-[#18181b] border border-[#27272a] rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      >
         {/* Fixed Header */}
         <div className="flex items-center justify-between gap-4 border-b border-[#27272a] px-5 sm:px-6 py-4 shrink-0 bg-[#18181b]">
           <div className="flex items-center gap-3">
@@ -70,7 +78,7 @@ export const SupabaseConnectorModal: React.FC<SupabaseConnectorModalProps> = ({
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <h2 id="supabase-connector-title" className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 Supabase Database Sync
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-900/60 border border-emerald-700/40 text-emerald-300 font-mono">
                   ofzdvvjkqgnheogwfdnk

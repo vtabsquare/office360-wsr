@@ -13,6 +13,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { AiInsightReport, TeamWsrData } from '../types/wsr';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface AiAnalysisModalProps {
   report: AiInsightReport | null;
@@ -37,9 +38,17 @@ export const AiAnalysisModal: React.FC<AiAnalysisModalProps> = ({
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
+  const focusTrapRef = useFocusTrap(true);
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div 
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ai-analysis-modal-title"
+        className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
+      >
         {/* Modal Header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-5">
           <div className="flex items-center gap-3">
@@ -47,7 +56,7 @@ export const AiAnalysisModal: React.FC<AiAnalysisModalProps> = ({
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <h2 id="ai-analysis-modal-title" className="text-xl font-bold text-white flex items-center gap-2">
                 Gemini AI Executive WSR Intelligence
                 <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-900/60 border border-cyan-600/40 text-cyan-300 font-mono">
                   gemini-3.7-flash

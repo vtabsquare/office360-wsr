@@ -21,6 +21,7 @@ import { TeamWsrData, BotScheduleConfig } from '../types/wsr';
 import { googleSignIn, getAccessToken, auth, logoutGoogle, clearAuthCache, hasValidToken } from '../services/googleAuthService';
 import { sendWsrViaGmail, generateWsrEmailHtml, generateErrorEmailHtml, SendEmailResult } from '../services/gmailService';
 import { calculateDynamicDateRange } from '../utils/dateUtils';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface BotExecutionModalProps {
   isOpen: boolean;
@@ -203,11 +204,19 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
     }
   };
 
+  const focusTrapRef = useFocusTrap(isOpen);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#09090b]/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden">
-      <div className="bg-[#18181b] border border-[#27272a] rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div 
+        ref={focusTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bot-execution-modal-title"
+        className="bg-[#18181b] border border-[#27272a] rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      >
         {/* Fixed Header */}
         <div className="flex items-center justify-between gap-4 border-b border-[#27272a] px-6 py-4 sm:py-5 shrink-0 bg-[#18181b]">
           <div className="flex items-center gap-3">
@@ -215,7 +224,7 @@ export const BotExecutionModal: React.FC<BotExecutionModalProps> = ({
               <Send className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <h2 id="bot-execution-modal-title" className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                 Automated WSR Dispatch Bot
               </h2>
               <p className="text-xs text-[#71717a]">
