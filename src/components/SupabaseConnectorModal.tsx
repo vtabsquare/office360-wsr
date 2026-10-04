@@ -12,6 +12,7 @@ import {
   Table
 } from 'lucide-react';
 import { SupabaseConfig } from '../types/wsr';
+import {
   testSupabaseConnection,
   SUPABASE_SQL_SCHEMA_SCRIPT
 } from '../services/supabaseClient';

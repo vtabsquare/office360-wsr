@@ -17,7 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
  * Fetches real data from crc6f_table12s (Employees) and crc6f_hr_timesheetlogs (Timesheets)
  * and formats it into the TeamWsrData structure required by the PPTX and AI engines.
  */
-export async function fetchLiveWsrData(): Promise<any[]> {
+export async function fetchLiveWsrData(customFromDate?: string, customToDate?: string): Promise<any[]> {
   // 1. Fetch all active employees
   const { data: employees, error: empError } = await supabase
     .from('crc6f_table12s')
@@ -27,7 +27,10 @@ export async function fetchLiveWsrData(): Promise<any[]> {
   if (empError) throw new Error('Error fetching employees: ' + empError.message);
   if (!employees || employees.length === 0) return [];
 
-  // Calculate date range for the "last week" (Monday to Saturday)
+  // Calculate date range for the "last week" (Monday to Saturday) by default
+  let fromDate = customFromDate;
+  let toDate = customToDate;
+  
   const today = new Date();
   const lastMonday = new Date(today);
   lastMonday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1) - 7);
@@ -35,15 +38,20 @@ export async function fetchLiveWsrData(): Promise<any[]> {
   const lastSaturday = new Date(lastMonday);
   lastSaturday.setDate(lastMonday.getDate() + 5); // Monday + 5 days = Saturday
 
-  const fromDate = lastMonday.toISOString().split('T')[0];
-  const toDate = lastSaturday.toISOString().split('T')[0];
+  if (!fromDate || !toDate) {
+    fromDate = lastMonday.toISOString().split('T')[0];
+    toDate = lastSaturday.toISOString().split('T')[0];
+  }
 
   const fmtDate = (d: Date) => {
     const day = d.getDate();
     const suf = (day > 3 && day < 21) ? 'th' : (day % 10 === 1 ? 'st' : day % 10 === 2 ? 'nd' : day % 10 === 3 ? 'rd' : 'th');
     return `${day}${suf} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
   };
-  const dynamicDateRange = `${fmtDate(lastMonday)} – ${fmtDate(lastSaturday)} ${lastSaturday.getFullYear()}`;
+  
+  const startDateObj = new Date(fromDate);
+  const endDateObj = new Date(toDate);
+  const dynamicDateRange = `${fmtDate(startDateObj)} – ${fmtDate(endDateObj)} ${endDateObj.getFullYear()}`;
 
   const { data: timesheets, error: tsError } = await supabase
     .from('crc6f_hr_timesheetlogs')

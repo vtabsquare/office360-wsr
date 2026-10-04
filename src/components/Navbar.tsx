@@ -31,6 +31,7 @@ interface NavbarProps {
   onOpenChat: () => void;
   onOpenSupabaseModal: () => void;
   onOpenScheduleModal: () => void;
+  onOpenCustomTimeline?: () => void;
   isDownloadingPptx?: boolean;
   onLogout: () => void;
 }
@@ -46,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenChat,
   onOpenSupabaseModal,
   onOpenScheduleModal,
+  onOpenCustomTimeline,
   isDownloadingPptx = false,
   onLogout
 }) => {
@@ -164,7 +166,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Utility Actions */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2 pt-1">
               <button
                 onClick={() => {
                   onOpenChat();
@@ -184,6 +186,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Calendar className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Schedule</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (onOpenCustomTimeline) onOpenCustomTimeline();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center justify-center gap-2 p-2 rounded-xl bg-[#18181b] border border-[#27272a] text-xs text-slate-300 hover:bg-[#27272a]"
+              >
+                <Calendar className="w-3.5 h-3.5 text-pink-400" />
+                <span>Custom Timeline</span>
               </button>
               <button
                 onClick={() => {

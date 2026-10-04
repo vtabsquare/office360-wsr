@@ -16,6 +16,7 @@ import { BotExecutionModal } from './components/BotExecutionModal';
 import { EmailSchedulerModal } from './components/EmailSchedulerModal';
 import { CsvImportExportModal } from './components/CsvImportExportModal';
 import { MailTrackingCard } from './components/MailTrackingCard';
+import { CustomTimelineModal } from './components/CustomTimelineModal';
 import {
   INITIAL_TEAMS_DATA,
   INITIAL_SCHEDULE_CONFIG,
@@ -193,6 +194,7 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCustomTimelineOpen, setIsCustomTimelineOpen] = useState(false);
 
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [isBotExecutionOpen, setIsBotExecutionOpen] = useState(false);
@@ -490,6 +492,7 @@ export default function App() {
         onOpenScheduleModal={() => setIsScheduleModalOpen(true)}
         isDownloadingPptx={isDownloadingPptx}
         onLogout={handleLogout}
+        onOpenCustomTimeline={() => setIsCustomTimelineOpen(true)}
       />
 
       {/* Bento Grid Hero / Overview Dashboard */}
@@ -872,6 +875,12 @@ export default function App() {
           teams={teams}
           onImportCsv={handleImportCsv}
           onClose={() => setIsCsvModalOpen(false)}
+        />
+      )}
+      
+      {isCustomTimelineOpen && (
+        <CustomTimelineModal
+          onClose={() => setIsCustomTimelineOpen(false)}
         />
       )}
     </div>

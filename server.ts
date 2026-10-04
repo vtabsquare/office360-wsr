@@ -49,7 +49,8 @@ app.get('/api/bot/test-cron', (req, res) => {
 // Endpoint to fetch live Supabase data for the frontend UI
 app.get('/api/wsr/live-data', async (req, res) => {
   try {
-    const data = await fetchLiveWsrData();
+    const { fromDate, toDate } = req.query;
+    const data = await fetchLiveWsrData(fromDate as string, toDate as string);
     res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

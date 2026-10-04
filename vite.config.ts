@@ -252,8 +252,11 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
         // 4. /api/wsr/live-data
         if (urlPath === '/api/wsr/live-data' && req.method === 'GET') {
           try {
+            const parsedUrl = new URL(req.url!, `http://${req.headers.host}`);
+            const fromDate = parsedUrl.searchParams.get('fromDate') || undefined;
+            const toDate = parsedUrl.searchParams.get('toDate') || undefined;
             const { fetchLiveWsrData } = await import('./src/services/backendWsrService.ts');
-            const data = await fetchLiveWsrData();
+            const data = await fetchLiveWsrData(fromDate, toDate);
             return sendJson(200, data);
           } catch (error: any) {
             console.error('Live data fetch error:', error);
