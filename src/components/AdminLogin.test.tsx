@@ -1,4 +1,5 @@
 import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { AdminLogin } from './AdminLogin';
@@ -44,8 +45,8 @@ describe('AdminLogin UI/UX Component', () => {
     const passwordInput = screen.getByPlaceholderText('Enter secure password');
     const submitBtn = screen.getByRole('button', { name: /authenticate/i });
     
-    fireEvent.change(emailInput, { target: { value: 'admin@gmail.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'Admin@12345' } });
+    fireEvent.change(emailInput, { target: { value: 'wsrvtabsquare@gmail.com' } });
+    fireEvent.change(passwordInput, { target: { value: 'Vtab@1234567' } });
     fireEvent.click(submitBtn);
     
     // Should call onLogin

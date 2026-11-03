@@ -39,11 +39,38 @@ app.post('/api/bot/schedule', (req, res) => {
   }
 });
 
-// Manual trigger endpoint for testing the cron job
-app.get('/api/bot/test-cron', (req, res) => {
-  // Run asynchronously to prevent Cloud Scheduler from timing out and retrying
-  runAutomatedWsrDispatch().catch(err => console.error('[WSR Cron] Test-cron failed:', err));
-  res.json({ success: true, message: 'Cron job started in background' });
+// Manual and automated trigger endpoints for Cloud Schedulers, webhooks, and testing
+app.all(['/api/bot/test-cron', '/api/bot/trigger'], async (req, res) => {
+  const force = req.query.force === 'true' || req.body?.force === true;
+  const sync = req.query.sync === 'true' || req.body?.sync === true;
+  const managerEmail = (req.body?.managerEmail as string) || (req.query.managerEmail as string);
+
+  console.log(`[WSR Trigger] Trigger endpoint invoked via ${req.method} (force=${force}, sync=${sync})`);
+
+  if (sync) {
+    try {
+      const result = await runAutomatedWsrDispatch(force, managerEmail);
+      return res.json({ success: true, message: 'WSR dispatch pipeline executed successfully', result });
+    } catch (error: any) {
+      console.error('[WSR Trigger] Sync dispatch error:', error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+  } else {
+    // Run asynchronously so Cloud Scheduler / webhooks receive immediate 200 without timing out
+    runAutomatedWsrDispatch(force, managerEmail).catch(err => console.error('[WSR Trigger] Async dispatch failed:', err));
+    return res.json({ success: true, message: 'WSR cron dispatch triggered in background' });
+  }
+});
+
+// Test error simulation endpoint (supports GET and POST)
+app.all('/api/bot/test-error', async (req, res) => {
+  try {
+    const { testErrorDispatch } = await import('./src/services/backendWsrService.js');
+    await testErrorDispatch();
+    return res.json({ success: false, message: 'Should have thrown simulated error' });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Endpoint to fetch live Supabase data for the frontend UI
@@ -358,7 +385,23 @@ app.get('/api/wsr/approve', async (req, res) => {
 // ----------------------------------------------------------------------
 app.post('/api/bot/dispatch-now', async (req, res) => {
   try {
-    const { toEmail, ccEmails, subject, htmlBody, pptxBase64, pptxFileName } = req.body;
+    const { toEmail, ccEmails, subject, htmlBody, pptxBase64, pptxFileName, trigger, force, sync, managerEmail } = req.body || {};
+    
+    // Support automated trigger calls sent to /api/bot/dispatch-now
+    if (trigger || (!toEmail && !htmlBody)) {
+      console.log(`[WSR Trigger] /api/bot/dispatch-now invoked as trigger: ${trigger || 'webhook'}`);
+      const isForce = force === true || req.query.force === 'true';
+      const isSync = sync === true || req.query.sync === 'true';
+      const targetManager = managerEmail || (req.query.managerEmail as string);
+
+      if (isSync) {
+        const result = await runAutomatedWsrDispatch(isForce, targetManager);
+        return res.json({ success: true, message: 'Automated WSR dispatch triggered successfully', result });
+      } else {
+        runAutomatedWsrDispatch(isForce, targetManager).catch(err => console.error('[WSR Trigger] Async dispatch failed:', err));
+        return res.json({ success: true, message: 'Automated WSR dispatch initiated in background', trigger });
+      }
+    }
     
     if (!toEmail || !htmlBody) {
       return res.status(400).json({ error: 'Missing required email fields (toEmail, htmlBody)' });

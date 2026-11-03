@@ -208,12 +208,16 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
           }
         }
 
-        // 3. /api/bot/test-cron
-        if (urlPath === '/api/bot/test-cron' && req.method === 'GET') {
+        // 3. /api/bot/test-cron and /api/bot/trigger (GET & POST)
+        if ((urlPath === '/api/bot/test-cron' || urlPath === '/api/bot/trigger') && (req.method === 'GET' || req.method === 'POST')) {
           try {
-            // Need to import dynamically to avoid top-level issues if any
+            const body = req.method === 'POST' ? await getBody() : {};
+            const urlObj = new URL(req.url || '', 'http://localhost');
+            const force = urlObj.searchParams.get('force') === 'true' || body?.force === true;
+            const managerEmail = body?.managerEmail || urlObj.searchParams.get('managerEmail') || undefined;
+
             const { runAutomatedWsrDispatch } = await import('./src/services/backendWsrService.ts');
-            const result = await runAutomatedWsrDispatch();
+            const result = await runAutomatedWsrDispatch(force, managerEmail);
             return sendJson(200, { success: true, message: 'Cron job executed successfully', result });
           } catch (error: any) {
             console.error('Test cron error:', error);
@@ -221,8 +225,8 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
           }
         }
 
-        // 3.1. /api/bot/test-error
-        if (urlPath === '/api/bot/test-error' && req.method === 'GET') {
+        // 3.1. /api/bot/test-error (GET & POST)
+        if (urlPath === '/api/bot/test-error' && (req.method === 'GET' || req.method === 'POST')) {
           try {
             const { testErrorDispatch } = await import('./src/services/backendWsrService.ts');
             await testErrorDispatch();
@@ -391,8 +395,20 @@ Provide a helpful, crisp, executive-ready response (using markdown bullets or ta
         // 6. /api/bot/dispatch-now
         if (urlPath === '/api/bot/dispatch-now' && req.method === 'POST') {
           const body = await getBody();
-          const { toEmail, ccEmails, subject, htmlBody, htmlBodyNoApprove, pptxBase64, pptxFileName } = body || {};
+          const { toEmail, ccEmails, subject, htmlBody, htmlBodyNoApprove, pptxBase64, pptxFileName, trigger, force, managerEmail } = body || {};
           
+          // Support automated trigger calls sent to /api/bot/dispatch-now
+          if (trigger || (!toEmail && !htmlBody)) {
+            try {
+              const { runAutomatedWsrDispatch } = await import('./src/services/backendWsrService.ts');
+              const result = await runAutomatedWsrDispatch(force === true, managerEmail);
+              return sendJson(200, { success: true, message: 'Automated WSR dispatch executed successfully', result });
+            } catch (error: any) {
+              console.error('Trigger error in dispatch-now:', error);
+              return sendJson(500, { success: false, error: error.message });
+            }
+          }
+
           if (!toEmail || !htmlBody) {
             return sendJson(400, { error: 'Missing required email fields (toEmail, htmlBody)' });
           }

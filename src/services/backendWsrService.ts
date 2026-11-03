@@ -69,14 +69,18 @@ export async function fetchLiveWsrData(customFromDate?: string, customToDate?: s
     .gte('crc6f_enddate', fromDate)
     .lte('crc6f_startdate', toDate);
     
-  if (leaveError) throw new Error('Error fetching leaves: ' + leaveError.message);
+  if (leaveError) {
+    console.warn('[WSR Data] Warning: Could not fetch leaves:', leaveError.message);
+  }
 
   // 4. Fetch task details to calculate carry forwards
   const { data: taskDetails, error: tasksError } = await supabase
     .from('crc6f_hr_taskdetailses')
     .select('*');
 
-  if (tasksError) throw new Error('Error fetching task details: ' + tasksError.message);
+  if (tasksError) {
+    console.warn('[WSR Data] Warning: Could not fetch task details:', tasksError.message);
+  }
 
   // 5. Fetch permissions data
   const { data: permissions, error: permError } = await supabase
@@ -86,7 +90,9 @@ export async function fetchLiveWsrData(customFromDate?: string, customToDate?: s
     .gte('crc6f_date', fromDate)
     .lte('crc6f_date', toDate);
 
-  if (permError) throw new Error('Error fetching permissions: ' + permError.message);
+  if (permError) {
+    console.warn('[WSR Data] Warning: Could not fetch permissions:', permError.message);
+  }
 
   // 6. Fetch attendance data from crc6f_table13s
   const { data: attendanceLogs, error: attError } = await supabase
@@ -95,7 +101,9 @@ export async function fetchLiveWsrData(customFromDate?: string, customToDate?: s
     .gte('crc6f_date', fromDate)
     .lte('crc6f_date', toDate);
 
-  if (attError) throw new Error('Error fetching attendance: ' + attError.message);
+  if (attError) {
+    console.warn('[WSR Data] Warning: Could not fetch attendance:', attError.message);
+  }
 
   // 7. Fetch employee shift settings
   const { data: shiftSettingsData, error: shiftError } = await supabase
@@ -352,18 +360,18 @@ async function dispatchErrorEmail(errorMsg: string, dateRange: string, mailFlow?
  * Automates the entire dispatch pipeline:
  * Fetch Data -> Gen HTML -> Gen PPTX -> Send via SMTP
  */
-export async function runAutomatedWsrDispatch() {
-  console.log('[WSR Cron] Starting automated WSR dispatch pipeline...');
+export async function runAutomatedWsrDispatch(force: boolean = false, customManagerEmail?: string) {
+  console.log(`[WSR Cron] Starting automated WSR dispatch pipeline... (force=${force})`);
   
   // Implement file lock to prevent multiple PM2 instances/workers from firing simultaneously
   const lockFile = path.join(os.tmpdir(), 'wsr_cron.lock');
   try {
-    if (fs.existsSync(lockFile)) {
+    if (!force && fs.existsSync(lockFile)) {
       const stats = fs.statSync(lockFile);
-      // If lock was created in the last 5 minutes, skip this run
+      // If lock was created in the last 5 minutes, skip this run unless force=true
       if (Date.now() - stats.mtimeMs < 1000 * 60 * 5) {
-        console.log('[WSR Cron] Dispatch already triggered recently by another instance. Skipping.');
-        return;
+        console.log('[WSR Cron] Dispatch already triggered recently by another instance. Skipping (pass force=true to bypass).');
+        return { success: false, skipped: true, reason: 'Dispatch was triggered within the last 5 minutes. Pass force=true to bypass.' };
       }
     }
     fs.writeFileSync(lockFile, Date.now().toString());
@@ -378,7 +386,7 @@ export async function runAutomatedWsrDispatch() {
     const teams = await fetchLiveWsrData();
     if (!teams || teams.length === 0) {
       console.log('[WSR Cron] No active team data found. Skipping dispatch.');
-      return;
+      return { success: false, reason: 'No active team data found' };
     }
 
     // Determine current date range for the email
@@ -407,7 +415,7 @@ export async function runAutomatedWsrDispatch() {
     // TEAM LEAD APPROVAL WORKFLOW
     // 1. Initially route to TL without PPTX
     const tlEmail = process.env.VITE_DEFAULT_TL_EMAIL;
-    const managerEmail = process.env.VITE_DEFAULT_MANAGER_EMAIL;
+    const managerEmail = customManagerEmail || process.env.VITE_DEFAULT_MANAGER_EMAIL;
     
     if (!tlEmail || !managerEmail) {
       throw new Error("TL or Manager email is not configured in .env");

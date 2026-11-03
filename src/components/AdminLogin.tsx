@@ -14,7 +14,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
-    if (email === 'admin@gmail.com' && password === 'Admin@12345') {
+    const validEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'wsrvtabsquare@gmail.com').trim().toLowerCase();
+    const validPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Vtab@1234567';
+
+    if (email.trim().toLowerCase() === validEmail && password === validPassword) {
       sessionStorage.setItem('officehub360_is_admin_authenticated', 'true');
       // Set session expiry to 60 minutes from now
       sessionStorage.setItem('officehub360_admin_session_expiry', (Date.now() + 3600000).toString());

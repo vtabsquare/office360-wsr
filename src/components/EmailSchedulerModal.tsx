@@ -57,7 +57,8 @@ export const EmailSchedulerModal: React.FC<EmailSchedulerModalProps> = ({
     });
   };
 
-  const curlCommand = `curl -X POST https://officehub360.vtabsquare.com/api/bot/dispatch-now \\
+  const baseUrl = import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const curlCommand = `curl -X POST ${baseUrl || 'https://officehub360-wsr-bot.onrender.com'}/api/bot/trigger \\
   -H "Content-Type: application/json" \\
   -d '{"trigger": "weekly_cron_monday", "managerEmail": "${formData.managerEmail}"}'`;
 

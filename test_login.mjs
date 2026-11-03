@@ -22,8 +22,8 @@ import puppeteer from 'puppeteer';
     
     // 2. Fill the login form
     console.log('Entering credentials...');
-    await page.type('input[type="email"]', 'admin@gmail.com');
-    await page.type('input[type="password"]', 'Admin@12345');
+    await page.type('input[type="email"]', 'wsrvtabsquare@gmail.com');
+    await page.type('input[type="password"]', 'Vtab@1234567');
     
     console.log('Submitting form...');
     await page.click('button[type="submit"]');
